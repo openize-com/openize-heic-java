@@ -15,6 +15,7 @@ import openize.isobmff.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 
@@ -241,7 +242,23 @@ public class HeicImageFrame
      */
     public final byte[] getByteArray(PixelFormat pixelFormat)
     {
-        return getByteArray(pixelFormat, new Rectangle());
+        return getByteArray(pixelFormat, new Rectangle(), null);
+    }
+
+    /**
+     * <p>
+     * Get pixel data in the format of byte array.
+     * </p>
+     * <p>Each three or four bytes (the count depends on the pixel format) refer to one pixel left to right top to bottom line by line.</p>
+     *
+     * @param pixelFormat     Pixel format that defines the order of colors and the presence of alpha byte.
+     * @param dstArray        Byte array for storing the pixel values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Byte array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
+     */
+    public final byte[] getByteArray(PixelFormat pixelFormat, byte[] dstArray)
+    {
+        return getByteArray(pixelFormat, new Rectangle(), dstArray);
     }
 
     /**
@@ -252,9 +269,11 @@ public class HeicImageFrame
      *
      * @param pixelFormat     Pixel format that defines the order of colors and the presence of alpha byte.
      * @param boundsRectangle Bounds of the requested area.
-     * @return Byte array, null if frame does not contain image data.
+     * @param dstArray        Byte array for storing the pixel values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Byte array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
-    public final byte[] getByteArray(PixelFormat pixelFormat, Rectangle boundsRectangle)
+    public final byte[] getByteArray(PixelFormat pixelFormat, Rectangle boundsRectangle, byte[] dstArray)
     {
         if (!isImage())
         {
@@ -269,12 +288,21 @@ public class HeicImageFrame
 
         int bpp = pixelFormat == PixelFormat.Rgb24 ? 3 : 4;
         
-        byte[] output = new byte[boundsRectangle.getHeight() * boundsRectangle.getWidth() * bpp];
+        byte[] output = dstArray;
+
+        final int reqArraySize = boundsRectangle.getHeight() * boundsRectangle.getWidth() * bpp;
+        if (output == null || output.length < reqArraySize)
+        {
+            output = new byte[reqArraySize];
+        }
 
         int index = 0;
-        for (int row = boundsRectangle.getTop(); row < boundsRectangle.getBottom(); row++)
+        final int rectangleBottom = boundsRectangle.getBottom();
+        final int boundsRectangleLeft = boundsRectangle.getLeft();
+        final int boundsRectangleRight = boundsRectangle.getRight();
+        for (int row = boundsRectangle.getTop(); row < rectangleBottom; row++)
         {
-            for (int col = boundsRectangle.getLeft(); col < boundsRectangle.getRight(); col++)
+            for (int col = boundsRectangleLeft; col < boundsRectangleRight; col++)
             {
                 output[index++] = threeDim[col][row][0];
                 output[index++] = threeDim[col][row][1];
@@ -300,7 +328,23 @@ public class HeicImageFrame
      */
     public final int[] getInt32Array(PixelFormat pixelFormat)
     {
-        return getInt32Array(pixelFormat, new Rectangle());
+        return getInt32Array(pixelFormat, new Rectangle(), null);
+    }
+
+    /**
+     * <p>
+     * Get pixel data in the format of integer array.
+     * </p>
+     * <p>Each int value refers to one pixel left to right top to bottom line by line.</p>
+     *
+     * @param pixelFormat     Pixel format that defines the order of colors.
+     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Integer array, null if frame does not contain image data.  In general, it equals to {@code dstArray}.
+     */
+    public final int[] getInt32Array(PixelFormat pixelFormat, int[] dstArray)
+    {
+        return getInt32Array(pixelFormat, new Rectangle(), dstArray);
     }
 
     /**
@@ -311,9 +355,11 @@ public class HeicImageFrame
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
      * @param boundsRectangle Bounds of the requested area.
-     * @return Integer array, null if frame does not contain image data.
+     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
-    public final int[] getInt32Array(PixelFormat pixelFormat, Rectangle boundsRectangle)
+    public final int[] getInt32Array(PixelFormat pixelFormat, Rectangle boundsRectangle, int[] dstArray)
     {
         if (!isImage())
         {
@@ -322,16 +368,24 @@ public class HeicImageFrame
 
         boundsRectangle = validateBounds(boundsRectangle);
 
-        
         byte[][][] threeDim = getMultidimArray(boundsRectangle);
         threeDim = applyPixelFormat(threeDim, pixelFormat);
 
-        int[] output = new int[boundsRectangle.getHeight() * boundsRectangle.getWidth()];
+        final int reqArraySize = boundsRectangle.getHeight() * boundsRectangle.getWidth();
+
+        int[] output = dstArray;
+        if (output == null || output.length < reqArraySize)
+        {
+            output = new int[reqArraySize];
+        }
 
         int index = 0;
-        for (int row = boundsRectangle.getTop(); row < boundsRectangle.getBottom(); row++)
+        final int rectangleBottom = boundsRectangle.getBottom();
+        final int boundsRectangleLeft = boundsRectangle.getLeft();
+        final int boundsRectangleRight = boundsRectangle.getRight();
+        for (int row = boundsRectangle.getTop(); row < rectangleBottom; row++)
         {
-            for (int col = boundsRectangle.getLeft(); col < boundsRectangle.getRight(); col++)
+            for (int col = boundsRectangleLeft; col < boundsRectangleRight; col++)
             {
                 output[index++] =
                         (threeDim[col][row][0] & 0xFF) << 24 |
@@ -447,7 +501,7 @@ public class HeicImageFrame
 
     private Rectangle validateBounds(Rectangle boundsRectangle)
     {
-        if (boundsRectangle.isEmpty())
+        if (boundsRectangle == null || boundsRectangle.isEmpty())
         {
             return new Rectangle(0, 0, (int) getWidth(), (int) getHeight());
         }
@@ -467,14 +521,15 @@ public class HeicImageFrame
         {
             return pixels;
         }
-        long tmp0 = autoalphaReference;
+        long tmp0 = autoalphaReference & 0xFFFFFFFFL;
 
-        
-        byte[][][] alpha = parent.getAllFrames().get(tmp0 & 0xFFFFFFFFL).getMultidimArray(boundsRectangle);
+        byte[][][] alpha = parent.getAllFrames().get(tmp0).getMultidimArray(boundsRectangle);
 
-        for (/*UInt32*/long row = 0; (row & 0xFFFFFFFFL) < (getHeight() & 0xFFFFFFFFL); row++)
+        final long height = getHeight() & 0xFFFFFFFFL;
+        final long width = getWidth() & 0xFFFFFFFFL;
+        for (/*UInt32*/long row = 0; row < height; row++)
         {
-            for (/*UInt32*/long col = 0; (col & 0xFFFFFFFFL) < (getWidth() & 0xFFFFFFFFL); col++)
+            for (/*UInt32*/long col = 0; col < width; col++)
             {
                 pixels[(int) (col)][(int) (row)][3] = alpha[(int) (col)][(int) (row)][0];
             }
@@ -484,33 +539,35 @@ public class HeicImageFrame
 
     private byte[][][] transformImage(byte[][][] pixels)
     {
-        if ((imageRotationAngle & 0xFF) == 0 && (imageMirrorAxis & 0xFF) == 0)
+        final int rotationAngle = imageRotationAngle & 0xFF;
+        if (rotationAngle == 0 && (imageMirrorAxis & 0xFF) == 0)
         {
             return pixels;
         }
 
-        
-        byte[][][] rotated = new byte[(int) (getWidth() & 0xFFFFFFFFL)][(int) (getHeight() & 0xFFFFFFFFL)][4];
+        final long width = getWidth() & 0xFFFFFFFFL;
+        final long height = getHeight() & 0xFFFFFFFFL;
+        byte[][][] rotated = new byte[(int) width][(int) height][4];
 
         /*UInt32*/
         long oldCol, oldRow;
 
-        for (/*UInt32*/long newRow = 0; (newRow & 0xFFFFFFFFL) < (getHeight() & 0xFFFFFFFFL); newRow++)
+        for (/*UInt32*/long newRow = 0; newRow < height; newRow++)
         {
-            for (/*UInt32*/long newCol = 0; (newCol & 0xFFFFFFFFL) < (getWidth() & 0xFFFFFFFFL); newCol++)
+            for (/*UInt32*/long newCol = 0; newCol < width; newCol++)
             {
                 switch (imageRotationAngle)
                 {
                     case 3:
                         oldCol = newRow;
-                        oldRow = ((((getWidth() & 0xFFFFFFFFL) - (newCol & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                        oldRow = width - newCol - 1;
                         break;
                     case 2:
-                        oldCol = ((((getWidth() & 0xFFFFFFFFL) - (newCol & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
-                        oldRow = ((((getWidth() & 0xFFFFFFFFL) - (newRow & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                        oldCol = width - newCol - 1;
+                        oldRow = width - newRow - 1;
                         break;
                     case 1:
-                        oldCol = ((((getHeight() & 0xFFFFFFFFL) - (newRow & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                        oldCol = height - newRow - 1;
                         oldRow = newCol;
                         break;
                     case 0:
@@ -522,20 +579,23 @@ public class HeicImageFrame
 
                 if ((imageMirrorAxis & 0xFF) == 1) // vertical
                 {
-                    if ((imageRotationAngle & 0xFF) == 0 || (imageRotationAngle & 0xFF) == 2)
-                        oldRow = ((((getHeight() & 0xFFFFFFFFL) - (oldRow & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                    if (rotationAngle == 0 || rotationAngle == 2)
+                        oldRow = height - oldRow - 1;
                     else
-                        oldCol = ((((getHeight() & 0xFFFFFFFFL) - (oldCol & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                        oldCol = height - oldCol - 1;
                 }
                 else if ((imageMirrorAxis & 0xFF) == 2) // horizontal
                 {
-                    if ((imageRotationAngle & 0xFF) == 0 || (imageRotationAngle & 0xFF) == 2)
-                        oldCol = ((((getWidth() & 0xFFFFFFFFL) - (oldCol & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                    if (rotationAngle == 0 || rotationAngle == 2)
+                        oldCol = width - oldCol - 1;
                     else
-                        oldRow = ((((getWidth() & 0xFFFFFFFFL) - (oldRow & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL;
+                        oldRow = width - oldRow - 1;
                 }
 
-                System.arraycopy(pixels[(int) (oldCol)][(int) (oldRow)], 0, rotated[(int) (newCol)][(int) (newRow)], 0, 4);
+                rotated[(int) (newCol)][(int) (newRow)][0] = pixels[(int) (oldCol)][(int) (oldRow)][0];
+                rotated[(int) (newCol)][(int) (newRow)][1] = pixels[(int) (oldCol)][(int) (oldRow)][1];
+                rotated[(int) (newCol)][(int) (newRow)][2] = pixels[(int) (oldCol)][(int) (oldRow)][2];
+                rotated[(int) (newCol)][(int) (newRow)][3] = pixels[(int) (oldCol)][(int) (oldRow)][3];
             }
         }
         return rotated;
@@ -548,12 +608,13 @@ public class HeicImageFrame
             return rgba;
         }
 
-        
         byte r, g, b, a;
 
-        for (/*UInt32*/long row = 0; (row & 0xFFFFFFFFL) < (getHeight() & 0xFFFFFFFFL); row++)
+        final long height = getHeight() & 0xFFFFFFFFL;
+        final long width = getWidth() & 0xFFFFFFFFL;
+        for (/*UInt32*/long row = 0; row < height; row++)
         {
-            for (/*UInt32*/long col = 0; (col & 0xFFFFFFFFL) < (getWidth() & 0xFFFFFFFFL); col++)
+            for (/*UInt32*/long col = 0; col < width; col++)
             {
                 r = rgba[(int) (col)][(int) (row)][0];
                 g = rgba[(int) (col)][(int) (row)][1];
@@ -612,9 +673,9 @@ public class HeicImageFrame
         int gridFieldLength = (((databox[1] & 0xFF) & 1) + 1) * 2;
 
         
-        byte rows = databox[2];
+        int rows = databox[2] & 0xFF;
         
-        byte columns = databox[3];
+        int columns = databox[3] & 0xFF;
 
         /*UInt32*/
         long localWidth = getByteFromIdatField(databox, 4, gridFieldLength) & 0xFFFFFFFFL;
@@ -629,26 +690,30 @@ public class HeicImageFrame
         
         byte[][][] framePixels;
         
-        byte[][][] output = new byte[(int) (localWidth & 0xFFFFFFFFL)][(int) (localHeight & 0xFFFFFFFFL)][4];
+        byte[][][] output = new byte[(int) localWidth][(int) localHeight][4];
 
-        for (int i = 0; i <= (rows & 0xFF); i++)
+        final Map<Long, HeicImageFrame> allFrames = parent.getAllFrames();
+        for (int i = 0; i <= rows; i++)
         {
-            for (int j = 0; j <= (columns & 0xFF); j++)
+            for (int j = 0; j <= columns; j++)
             {
-                index = i * ((columns & 0xFF) + 1) + j;
-                frame = parent.getAllFrames().get(derived[index]);
-                framePixels = frame.getMultidimArray(new Rectangle(0, 0, (int) frame.getWidth(), (int) frame.getHeight()));
+                index = i * (columns + 1) + j;
+                frame = allFrames.get(derived[index]);
+                final long frameWidth = frame.getWidth();
+                final long frameHeight = frame.getHeight();
+                framePixels = frame.getMultidimArray(new Rectangle(0, 0, (int) frameWidth, (int) frameHeight));
 
-                for (int k = 0; k < (frame.getHeight() & 0xFFFFFFFFL); k++)
+                for (int k = 0; k < (frameHeight & 0xFFFFFFFFL); k++)
                 {
-                    for (int l = 0; l < (frame.getWidth() & 0xFFFFFFFFL); l++)
+                    for (int l = 0; l < (frameWidth & 0xFFFFFFFFL); l++)
                     {
-                        if (((j * (frame.getWidth() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + l < (localWidth & 0xFFFFFFFFL) && ((i * (frame.getHeight() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + k < (localHeight & 0xFFFFFFFFL))
+                        if (((j * frameWidth) & 0xFFFFFFFFL) + l < localWidth
+                                && ((i * frameHeight) & 0xFFFFFFFFL) + k < localHeight)
                         {
-                            output[(int) (((j * (frame.getWidth() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + l)][(int) (((i * (frame.getHeight() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + k)][0] = framePixels[l][k][0];
-                            output[(int) (((j * (frame.getWidth() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + l)][(int) (((i * (frame.getHeight() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + k)][1] = framePixels[l][k][1];
-                            output[(int) (((j * (frame.getWidth() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + l)][(int) (((i * (frame.getHeight() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + k)][2] = framePixels[l][k][2];
-                            output[(int) (((j * (frame.getWidth() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + l)][(int) (((i * (frame.getHeight() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + k)][3] = framePixels[l][k][3];
+                            output[(int) (((j * frameWidth) & 0xFFFFFFFFL) + l)][(int) (((i * frameHeight) & 0xFFFFFFFFL) + k)][0] = framePixels[l][k][0];
+                            output[(int) (((j * frameWidth) & 0xFFFFFFFFL) + l)][(int) (((i * frameHeight) & 0xFFFFFFFFL) + k)][1] = framePixels[l][k][1];
+                            output[(int) (((j * frameWidth) & 0xFFFFFFFFL) + l)][(int) (((i * frameHeight) & 0xFFFFFFFFL) + k)][2] = framePixels[l][k][2];
+                            output[(int) (((j * frameWidth) & 0xFFFFFFFFL) + l)][(int) (((i * frameHeight) & 0xFFFFFFFFL) + k)][3] = framePixels[l][k][3];
                         }
                     }
                 }
@@ -693,7 +758,7 @@ public class HeicImageFrame
         
         byte[][][] framePixels;
         
-        byte[][][] output = new byte[(int) (outputWidth & 0xFFFFFFFFL)][(int) (outputHeight & 0xFFFFFFFFL)][4];
+        byte[][][] output = new byte[(int) outputWidth][(int) outputHeight][4];
 
         final long height = getHeight() & 0xFFFFFFFFL;
         final long width = getWidth() & 0xFFFFFFFFL;
@@ -708,13 +773,15 @@ public class HeicImageFrame
         for (int i = 0; i < derived.length; i++)
         {
             frame = parent.getAllFrames().get(derived[i]);
-            framePixels = frame.getMultidimArray(new Rectangle(0, 0, (int) frame.getWidth(), (int) frame.getHeight()));
+            final long frameWidth = frame.getWidth();
+            final long frameHeight = frame.getHeight();
+            framePixels = frame.getMultidimArray(new Rectangle(0, 0, (int) frameWidth, (int) frameHeight));
 
-            for (int k = 0; k < (frame.getHeight() & 0xFFFFFFFFL); k++)
+            for (int k = 0; k < frameHeight; k++)
             {
-                for (int l = 0; l < (frame.getWidth() & 0xFFFFFFFFL); l++)
+                for (int l = 0; l < frameWidth; l++)
                 {
-                    if (horizontal_offset[i] + l < (outputWidth & 0xFFFFFFFFL) && vertical_offset[i] + k < (outputHeight & 0xFFFFFFFFL))
+                    if (horizontal_offset[i] + l < outputWidth && vertical_offset[i] + k < outputHeight)
                     {
                         output[horizontal_offset[i] + l][vertical_offset[i] + k][0] = framePixels[l][k][0];
                         output[horizontal_offset[i] + l][vertical_offset[i] + k][1] = framePixels[l][k][1];

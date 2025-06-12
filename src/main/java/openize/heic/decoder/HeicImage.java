@@ -132,7 +132,23 @@ public class HeicImage
      */
     public final /*Byte*/byte[] getByteArray(PixelFormat pixelFormat)
     {
-        return getByteArray(pixelFormat, new Rectangle());
+        return getByteArray(pixelFormat, new Rectangle(), null);
+    }
+
+    /**
+     * <p>
+     * Get pixel data of the default image frame in the format of byte array.
+     * </p>
+     * <p>Each three or four bytes (the count depends on the pixel format) refer to one pixel left to right top to bottom line by line.</p>
+     *
+     * @param pixelFormat     Pixel format that defines the order of colors and the presence of alpha byte.
+     * @param dstArray        Byte array for storing the pixel values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Byte array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
+     */
+    public final /*Byte*/byte[] getByteArray(PixelFormat pixelFormat, byte[] dstArray)
+    {
+        return getDefaultFrame().getByteArray(pixelFormat, new Rectangle(), dstArray);
     }
 
     /**
@@ -143,11 +159,13 @@ public class HeicImage
      *
      * @param pixelFormat     Pixel format that defines the order of colors and the presence of alpha byte.
      * @param boundsRectangle Bounds of the requested area.
-     * @return Byte array, null if frame does not contain image data.
+     * @param dstArray        Byte array for storing the pixel values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Byte array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
-    public final /*Byte*/byte[] getByteArray(PixelFormat pixelFormat, Rectangle boundsRectangle)
+    public final /*Byte*/byte[] getByteArray(PixelFormat pixelFormat, Rectangle boundsRectangle, byte[] dstArray)
     {
-        return getDefaultFrame().getByteArray(pixelFormat, boundsRectangle);
+        return getDefaultFrame().getByteArray(pixelFormat, boundsRectangle, dstArray);
     }
 
     /**
@@ -161,7 +179,23 @@ public class HeicImage
      */
     public final int[] getInt32Array(PixelFormat pixelFormat)
     {
-        return getInt32Array(pixelFormat, new Rectangle());
+        return getInt32Array(pixelFormat, new Rectangle(), null);
+    }
+
+    /**
+     * <p>
+     * Get pixel data of the default image frame in the format of integer array.
+     * </p>
+     * <p>Each int value refers to one pixel left to right top to bottom line by line.</p>
+     *
+     * @param pixelFormat     Pixel format that defines the order of colors.
+     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
+     */
+    public final int[] getInt32Array(PixelFormat pixelFormat, int[] dstArray)
+    {
+        return getInt32Array(pixelFormat, new Rectangle(), dstArray);
     }
 
     /**
@@ -172,11 +206,13 @@ public class HeicImage
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
      * @param boundsRectangle Bounds of the requested area.
-     * @return Integer array, null if frame does not contain image data.
+     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     *                        necessary the new array will be allocated and returned.
+     * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
-    public final int[] getInt32Array(PixelFormat pixelFormat, Rectangle boundsRectangle)
+    public final int[] getInt32Array(PixelFormat pixelFormat, Rectangle boundsRectangle, int[] dstArray)
     {
-        return getDefaultFrame().getInt32Array(pixelFormat, boundsRectangle);
+        return getDefaultFrame().getInt32Array(pixelFormat, boundsRectangle, dstArray);
     }
 
     /**
