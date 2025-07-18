@@ -57,7 +57,7 @@ public class HeicImage
      * </p>
      * <p>
      * This operation does not decode pixels.
-     * Use the default frame methods GetByteArray or GetInt32Array afterwards in order to decode pixels.
+     * Use the default frame methods GetByteArray or GetInt32Array afterward in order to decode pixels.
      * </p>
      *
      * @param stream File stream.
@@ -198,6 +198,20 @@ public class HeicImage
         return getInt32Array(pixelFormat, new Rectangle(), dstArray);
     }
 
+    /**
+     * <p>
+     * Get pixel data of the default image frame in the format of integer array.
+     * </p>
+     * <p>Each int value refers to one pixel left to right top to bottom line by line.</p>
+     *
+     * @param pixelFormat     Pixel format that defines the order of colors.
+     * @param boundsRectangle Bounds of the requested area.
+     * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
+     */
+    public final int[] getInt32Array(PixelFormat pixelFormat, Rectangle boundsRectangle)
+    {
+        return getDefaultFrame().getInt32Array(pixelFormat, boundsRectangle, null);
+    }
     /**
      * <p>
      * Get pixel data of the default image frame in the format of integer array.

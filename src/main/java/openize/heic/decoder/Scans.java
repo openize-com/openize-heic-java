@@ -11,7 +11,6 @@
 package openize.heic.decoder;
 
 
-
 final class Scans
 {
     public static byte[][][][] getScanOrder(){ return scanOrder; }
@@ -19,11 +18,11 @@ final class Scans
 
     private static boolean _initialised = false;
 
-    static void initialize()
+    static synchronized void initialize()
     {
         if (_initialised) return;
-        _initialised = true;
 
+        _initialised = true;
         scanOrderInitialize();
     }
 
@@ -32,17 +31,17 @@ final class Scans
         scanOrder = new byte[6][][][];
         for (int log2BlockSize = 0; log2BlockSize < 6; log2BlockSize++)
         {
-            getScanOrder()[log2BlockSize] = new byte[4][][];
+            scanOrder[log2BlockSize] = new byte[4][][];
 
             if (log2BlockSize < 4)
             {
-                getScanOrder()[log2BlockSize][0] = diagonalScanInitialize((byte)(1 << log2BlockSize));
-                getScanOrder()[log2BlockSize][1] = horizontalScanInitialize((byte)(1 << log2BlockSize));
-                getScanOrder()[log2BlockSize][2] = verticalScanInitialize((byte)(1 << log2BlockSize));
+                scanOrder[log2BlockSize][0] = diagonalScanInitialize((byte)(1 << log2BlockSize));
+                scanOrder[log2BlockSize][1] = horizontalScanInitialize((byte)(1 << log2BlockSize));
+                scanOrder[log2BlockSize][2] = verticalScanInitialize((byte)(1 << log2BlockSize));
             }
 
             if (log2BlockSize > 1)
-                getScanOrder()[log2BlockSize][3] = traverseScanInitialize((byte)(1 << log2BlockSize));
+                scanOrder[log2BlockSize][3] = traverseScanInitialize((byte)(1 << log2BlockSize));
         }
     }
 
@@ -156,8 +155,4 @@ final class Scans
 
         return travScan;
     }
-
-
-
 }
-

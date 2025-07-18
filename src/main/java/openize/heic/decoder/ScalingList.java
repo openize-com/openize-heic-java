@@ -81,7 +81,7 @@ class Scaling
         41,41,54,54,54,71,71,91
     };
 
-    static void initiate(seq_parameter_set_rbsp sps)
+    static synchronized void initiate(seq_parameter_set_rbsp sps)
     {
         if (getScalingFactor() != null)
         {
