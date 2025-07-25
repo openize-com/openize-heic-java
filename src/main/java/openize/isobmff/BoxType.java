@@ -370,7 +370,7 @@ public enum BoxType
     public static BoxType codeToType(long code)
     {
         code &= 0xFFFFFFFFL;
-        for (BoxType type : BoxType.values())
+        for (BoxType type : _values)
         {
             if (type.getCode() == code)
             {
@@ -391,4 +391,6 @@ public enum BoxType
     {
         return code;
     }
+
+    private static final BoxType[] _values = BoxType.values();
 }

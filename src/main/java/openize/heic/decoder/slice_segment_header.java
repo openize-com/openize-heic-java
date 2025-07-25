@@ -110,7 +110,7 @@ public class slice_segment_header
             for (int i = 0; i < (pps.num_extra_slice_header_bits & 0xFF); i++)
                 slice_reserved_flag[i] = stream.readFlag();
 
-            slice_type = SliceType.values()[(int) stream.readUev()];
+            slice_type = SliceType.get(stream.readUev());
 
             if (slice_type != SliceType.I)
             {

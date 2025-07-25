@@ -74,7 +74,7 @@ public enum ImageFrameType /*: uint*/
 
     public static ImageFrameType codeToType(long code)
     {
-        for (ImageFrameType type : ImageFrameType.values())
+        for (ImageFrameType type : _values)
         {
             if (type.code == code)
             {
@@ -89,4 +89,6 @@ public enum ImageFrameType /*: uint*/
     {
         return code;
     }
+
+    private static final ImageFrameType[] _values = ImageFrameType.values();
 }

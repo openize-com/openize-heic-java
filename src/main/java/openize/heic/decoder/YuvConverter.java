@@ -61,11 +61,11 @@ class YuvConverter
     public final byte[][][] getRgbaByteArray()
     {
         /*UInt32*/
-        long width = picture.hvcConfig.getSPS().pic_width_in_luma_samples;
+        int width = (int) (picture.hvcConfig.getSPS().pic_width_in_luma_samples & 0xFFFFFFFFL);
         /*UInt32*/
-        long height = picture.hvcConfig.getSPS().pic_height_in_luma_samples;
+        int height = (int) (picture.hvcConfig.getSPS().pic_height_in_luma_samples & 0xFFFFFFFFL);
 
-        byte[][][] pixels = new byte[(int) (width & 0xFFFFFFFFL)][(int) (height & 0xFFFFFFFFL)][4];
+        byte[][][] pixels = new byte[width][height][4];
 
         if (picture.rawPixels == null)
             return pixels;
@@ -82,10 +82,16 @@ class YuvConverter
         // conversion to 8 bit
         double BitKoefY = 256.0 / (1 << (picture.hvcConfig.getSPS().getBitDepthY() & 0xFF));
         double BitKoefC = 256.0 / (1 << (picture.hvcConfig.getSPS().getBitDepthC() & 0xFF));
+        final boolean isNotChroma = (picture.hvcConfig.getSPS()
+                                                      .getChromaArrayType() & 0xFFFFFFFFL) == 0;
+        final int configSpsSubWidthC = picture.hvcConfig.getSPS()
+                                                        .getSubWidthC() & 0xFF;
+        final int configSpsSubHeightC = picture.hvcConfig.getSPS()
+                                                         .getSubHeightC() & 0xFF;
 
-        for (int row = 0; row < (height & 0xFFFFFFFFL); row++)
+        for (int row = 0; row < height; row++)
         {
-            for (int col = 0; col < (width & 0xFFFFFFFFL); col++)
+            for (int col = 0; col < width; col++)
             {
                 Y = picture.rawPixels[0][col][row] & 0xFFFF;
 
@@ -94,7 +100,7 @@ class YuvConverter
                     Y = tvRangeCoeffLuma * (Y - lumaOffset);
                 }
 
-                if ((picture.hvcConfig.getSPS().getChromaArrayType() & 0xFFFFFFFFL) == 0)
+                if (isNotChroma)
                 {
                     R = Y;
                     G = Y;
@@ -102,8 +108,8 @@ class YuvConverter
                 }
                 else
                 {
-                    Cb = (picture.rawPixels[1][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
-                    Cr = (picture.rawPixels[2][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
+                    Cb = (picture.rawPixels[1][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
+                    Cr = (picture.rawPixels[2][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
 
                     if (!fullRangeFlag)
                     {
@@ -191,12 +197,14 @@ class YuvConverter
                 double zB = 1 - (p.xB + p.yB);
                 double zW = 1 - (p.xW + p.yW);
 
-                double denom = p.yW * (p.xR * (p.yG * zB - p.yB * zG) + p.xG * (p.yB * zR - p.yR * zB) + p.xB * (p.yR * zG - p.yG * zR));
+                final double tmpGmB_BmG = p.yG * zB - p.yB * zG;
+                final double tmpRmG_GmR = p.yR * zG - p.yG * zR;
+                double denom = p.yW * (p.xR * tmpGmB_BmG + p.xG * (p.yB * zR - p.yR * zB) + p.xB * tmpRmG_GmR);
 
                 try
                 {
-                    kr = (p.yR * (p.xW * (p.yG * zB - p.yB * zG) + p.yW * (p.xB * zG - p.xG * zB) + zW * (p.xG * p.yB - p.xB * p.yG))) / denom;
-                    kb = (p.yB * (p.xW * (p.yR * zG - p.yG * zR) + p.yW * (p.xG * zR - p.xR * zG) + zW * (p.xR * p.yG - p.xG * p.yR))) / denom;
+                    kr = (p.yR * (p.xW * tmpGmB_BmG + p.yW * (p.xB * zG - p.xG * zB) + zW * (p.xG * p.yB - p.xB * p.yG))) / denom;
+                    kb = (p.yB * (p.xW * tmpRmG_GmR + p.yW * (p.xG * zR - p.xR * zG) + zW * (p.xR * p.yG - p.xG * p.yR))) / denom;
                 }
                 catch (java.lang.RuntimeException e)
                 {

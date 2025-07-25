@@ -175,7 +175,7 @@ class coding_unit
 
                             if ((sps.getChromaArrayType() & 0xFFFFFFFFL) == 2)
                             {
-                                IntraPredModeC = IntraPredMode.values()[(IntraPredModeChroma422Map[IntraPredModeC.ordinal()] & 0xFF)];
+                                IntraPredModeC = IntraPredMode.get((IntraPredModeChroma422Map[IntraPredModeC.ordinal()] & 0xFF));
                             }
 
                             picture.setIntraPredModeC(x0, y0, 1 << log2CbSize, IntraPredModeC);

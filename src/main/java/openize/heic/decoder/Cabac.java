@@ -458,7 +458,7 @@ public class Cabac
     {
         // FL: cMax: 31
         // bin 1-5+: bypass
-        return IntraPredMode.values()[decodeFixedLengthBypass(5)];
+        return IntraPredMode.get(decodeFixedLengthBypass(5));
     }
 
     final byte read_intra_chroma_pred_mode()
@@ -1175,10 +1175,9 @@ public class Cabac
 
     private void initializationOfContextVariables(int SliceQpY, int initType)
     {
-        final CabacType[] cabacTypes = CabacType.values();
+        final CabacType[] cabacTypes = CabacType.getValues();
         for (int cabacType = 0; cabacType < 40; cabacType++)
         {
-            
             byte[] init_value = getinit_valueByType(cabacTypes[cabacType], initType);
             contextTable[cabacType] = new ContextVariable[init_value.length];
 

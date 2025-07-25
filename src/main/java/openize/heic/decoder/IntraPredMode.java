@@ -70,4 +70,11 @@ public enum IntraPredMode
         }
         return array;
     }
+
+    public static IntraPredMode get(int id)
+    {
+        return _values[id];
+    }
+
+    private static final IntraPredMode[] _values = IntraPredMode.values();
 }

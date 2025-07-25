@@ -53,7 +53,14 @@ public enum CabacType
     palette_transpose_flag,
     cu_qp_delta_abs,
     cu_chroma_qp_offset_flag,
-    cu_chroma_qp_offset_idx,
+    cu_chroma_qp_offset_idx;
+
+    public static CabacType[] getValues()
+    {
+        return _values;
+    }
+
+    private static final CabacType[] _values = CabacType.values();
 }
 
 

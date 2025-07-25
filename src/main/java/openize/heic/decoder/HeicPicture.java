@@ -314,7 +314,6 @@ public class HeicPicture
 
         if (candIntraPredModeB == candIntraPredModeA)
         {
-            final IntraPredMode[] intraPredModes = IntraPredMode.values();
             if (candIntraPredModeA.ordinal() < 2)
             {
                 candModeList[0] = IntraPredMode.INTRA_PLANAR;
@@ -324,8 +323,8 @@ public class HeicPicture
             else
             {
                 candModeList[0] = candIntraPredModeA;
-                candModeList[1] = intraPredModes[(2 + ((candIntraPredModeA.ordinal() + 29) % 32))];
-                candModeList[2] = intraPredModes[(2 + (((candIntraPredModeA.ordinal() - 2) + 1) % 32))];
+                candModeList[1] = IntraPredMode.get((2 + ((candIntraPredModeA.ordinal() + 29) % 32)));
+                candModeList[2] = IntraPredMode.get((2 + (((candIntraPredModeA.ordinal() - 2) + 1) % 32)));
             }
         }
         else
@@ -389,7 +388,7 @@ public class HeicPicture
                 if (intMode >= candModeList[i].ordinal())
                     intMode++;
             }
-            mode = IntraPredMode.values()[intMode];
+            mode = IntraPredMode.get(intMode);
         }
 
         for (int i = xPb; i < xPb + pbSize; i++)
