@@ -38,7 +38,7 @@ public class pic_parameter_set_rbsp extends NalUnit
     public /*UInt32*/ long[] RowHeightInLumaSamples;
     // the conversion from a location (x, y) in units of minimum transform blocks
     // to a transform block address in z-scan order
-    public /*UInt32*/ long[][] MinTbAddrZs;
+    public /*UInt32*/ int[][] MinTbAddrZs;
     final byte pps_pic_parameter_set_id; // max - 64
     final byte pps_seq_parameter_set_id;
     final boolean dependent_slice_segments_enabled_flag;
@@ -375,7 +375,7 @@ public class pic_parameter_set_rbsp extends NalUnit
         long xMax = ((sps.getPicWidthInCtbsY() & 0xFFFFFFFFL) << (((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) & 0x1F)) & 0xFFFFFFFFL;
         /*UInt32*/
         long yMax = ((sps.getPicHeightInCtbsY() & 0xFFFFFFFFL) << (((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) & 0x1F)) & 0xFFFFFFFFL;
-        MinTbAddrZs = new /*UInt32*/long[(int) (xMax & 0xFFFFFFFFL)][(int) (yMax & 0xFFFFFFFFL)];
+        MinTbAddrZs = new /*UInt32*/int[(int) (xMax & 0xFFFFFFFFL)][(int) (yMax & 0xFFFFFFFFL)];
 
         for (/*UInt32*/long y = 0; (y & 0xFFFFFFFFL) < (yMax & 0xFFFFFFFFL); y++)
         {
@@ -384,7 +384,7 @@ public class pic_parameter_set_rbsp extends NalUnit
                 tbX = ((((x & 0xFFFFFFFFL) << ((sps.getMinTbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL) >> (sps.getCtbLog2SizeY() & 0xFF)) & 0xFFFFFFFFL;
                 tbY = ((((y & 0xFFFFFFFFL) << ((sps.getMinTbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL) >> (sps.getCtbLog2SizeY() & 0xFF)) & 0xFFFFFFFFL;
                 ctbAddrRs = ((((sps.getPicWidthInCtbsY() & 0xFFFFFFFFL) * (tbY & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + (tbX & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
-                MinTbAddrZs[(int) (x)][(int) (y)] = ((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) << ((((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) * 2) & 0x1F)) & 0xFFFFFFFFL;
+                MinTbAddrZs[(int) (x)][(int) (y)] = (int)((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) << ((((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) * 2) & 0x1F));
 
                 p = 0;
                 for (byte i = 0; (i & 0xFF) < ((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)); i++)
@@ -393,7 +393,7 @@ public class pic_parameter_set_rbsp extends NalUnit
                     p = ((p & 0xFFFFFFFFL) + ((((m & x) & 0xFFFFFFFFL) != 0 ? (((m & 0xFFFFFFFFL) * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) : 0) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
                     p = ((p & 0xFFFFFFFFL) + ((((m & y) & 0xFFFFFFFFL) != 0 ? ((((2 * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) : 0) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
                 }
-                MinTbAddrZs[(int) (x)][(int) (y)] = ((MinTbAddrZs[(int) (x)][(int) (y)] & 0xFFFFFFFFL) + (p & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+                MinTbAddrZs[(int) (x)][(int) (y)] = (int)((MinTbAddrZs[(int) (x)][(int) (y)] & 0xFFFFFFFFL) + (p & 0xFFFFFFFFL));
             }
         }
     }

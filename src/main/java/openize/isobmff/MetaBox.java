@@ -128,6 +128,16 @@ public class MetaBox extends FullBox
 
     /**
      * <p>
+     * Item group box.
+     * </p>
+     */
+    public final GroupsListBox getgrpl()
+    {
+        return (GroupsListBox) tryGetBox(BoxType.grpl);
+    }
+
+    /**
+     * <p>
      * Text summary of the box.
      * </p>
      */

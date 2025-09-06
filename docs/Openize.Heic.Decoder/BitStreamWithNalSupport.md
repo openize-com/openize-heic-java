@@ -13,9 +13,9 @@ Name | Type | Description | Notes
 
 Name | Type | Description | Parameters
 ------------ | ------------- | ------------- | -------------
-**createNewImageContext** | **void** | Creates an image context object. | uint **imageId** - Image identificator.
-**deleteImageContext** | **void** | Deletes the image context object by id. | uint **imageId** - Image identificator.
-**turnOnNalUnitMode** | **void** | Turns on Nal Unit reader mode which ignores specified by standart byte sequences. | 
+**createNewImageContext** | **void** | Creates an image context object. | long **imageId** - Image identifier.
+**deleteImageContext** | **void** | Deletes the image context object by id. | long **imageId** - Image identifier.
+**turnOnNalUnitMode** | **void** | Turns on Nal Unit reader mode which ignores specified by standard byte sequences. | 
 **turnOffNulUnitMode** | **void** | Turns off Nal Unit reader mode. | 
 **read** | **int** | Reads the specified number of bits from the stream. | int **bitCount** - The required number of bits to read.
 **readString** | **String** | Reads bytes as ASCII characters until '\0'. | 

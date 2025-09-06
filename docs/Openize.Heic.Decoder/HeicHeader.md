@@ -7,6 +7,7 @@ Heic image header class. Grants convinient access to IsoBmff container meta data
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Meta** | **MetaBox** | Meta data IsoBmff box. | 
+**DefaultFrameId** | **long** | The identifier of the default frame. | 
 
 ## Constructors
 

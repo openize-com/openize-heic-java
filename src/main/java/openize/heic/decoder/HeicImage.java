@@ -14,7 +14,6 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 import openize.io.IOStream;
 import openize.isobmff.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -248,8 +247,35 @@ public class HeicImage
      */
     public final Map<Long, HeicImageFrame> getFrames()
     {
-        return _frames.entrySet().stream().filter((f) -> !f.getValue().isHidden())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Long, HeicImageFrame> frames = _frames.entrySet().stream().filter((f) -> {
+            return !f.getValue().isHidden()
+                    && f.getValue().getDerivativeType() != BoxType.thmb
+                    &&  f.getValue().getImageType() != ImageFrameType.tmap;
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        List<EntityToGroupBox> groups = this.getHeader().getGroupsIfPresent();
+        if (groups == null)
+            return frames;
+
+        for (EntityToGroupBox grp : groups)
+        {
+            if (grp.type == BoxType.altr)
+            {
+                /*UInt32*/long[] entities = grp.entities;
+                boolean selected = false;
+
+                for (long entity : entities)
+                {
+                    if (frames.containsKey(entity))
+                    {
+                        if (!selected) selected = true;
+                        else frames.remove(entity);
+                    }
+                }
+            }
+        }
+
+        return frames;
     }
 
     /**
@@ -309,11 +335,14 @@ public class HeicImage
 
         for (IlocItem item : getHeader().getMeta().getiloc().items)
         {
-            /*UInt32*/
             long id = item.item_ID;
+            _frames.put(id, new HeicImageFrame(stream, this, id));
+        }
 
-            final List<Box> properties = rawProperties.getOrDefault(id, new ArrayList<>());
-            _frames.put(id, new HeicImageFrame(stream, this, id, properties));
+        for (Map.Entry<Long, HeicImageFrame> frame : _frames.entrySet())
+        {
+            if (rawProperties.containsKey(frame.getValue().getID()))
+                frame.getValue().loadProperties(stream, rawProperties.get(frame.getValue().getID()));
         }
     }
 }

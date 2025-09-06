@@ -22,58 +22,58 @@ public class HeicPicture
     public final video_parameter_set_rbsp vps;
     public final seq_parameter_set_rbsp sps;
     public final pic_parameter_set_rbsp pps;
-    public DecoderContext Context;
     public final NalHeader NalHeader = new NalHeader();
 
     public int PicOrderCntVal;
     public int picture_order_cnt_lsb;
 
-    public final int[][][] SaoTypeIdx;
-    public final int[][][][] SaoOffsetVal;
-    public final int[][][] SaoEoClass;
+    public int[][][] SaoTypeIdx;
+    public int[][][][] SaoOffsetVal;
+    public int[][][] SaoEoClass;
 
-    public final int[][][] ResScaleVal;
+    public int[][][] ResScaleVal;
 
-    public final int[][][][] sao_offset_abs;
-    public final int[][][][] sao_offset_sign;
-    public final int[][][] sao_band_position;
+    public int[][][][] sao_offset_abs;
+    public int[][][][] sao_offset_sign;
+    public int[][][] sao_band_position;
 
-    public /*UInt32*/long[][] SliceAddrRs;
+    public /*UInt32*/int[][] SliceAddrRs;
     public int[][] SliceHeaderIndex;
-    public final IntraPredMode[][] IntraPredModeY;
-    public final IntraPredMode[][] IntraPredModeC;
+    public IntraPredMode[][] IntraPredModeY;
+    public IntraPredMode[][] IntraPredModeC;
 
-    public final int[][][] TransCoeffLevel;
+    public int[][][] TransCoeffLevel;
 
-    public final int[][] CtDepth;
-    public final PredMode[][] CuPredMode;
-    public final int[][] QpY;
-    public final int[][] Log2CbSize;
-    public final boolean[][] merge_flag;
+    public int[][] CtDepth;
+    public PredMode[][] CuPredMode;
+    public int[][] QpY;
+    public int[][] Log2CbSize;
+    public boolean[][] merge_flag;
 
-    public final boolean[][] cu_skip_flag;
-    public final boolean[][] palette_mode_flag;
-    public final boolean[][] pcm_flag;
-    public final boolean[][] prev_intra_luma_pred_flag;
-    public final int[][] mpm_idx;
-    public final IntraPredMode[][] rem_intra_luma_pred_mode;
-    public final byte[][] intra_chroma_pred_mode;
+    public boolean[][] cu_skip_flag;
+    public boolean[][] palette_mode_flag;
+    public boolean[][] pcm_flag;
+    public boolean[][] prev_intra_luma_pred_flag;
+    public int[][] mpm_idx;
+    public IntraPredMode[][] rem_intra_luma_pred_mode;
+    public byte[][] intra_chroma_pred_mode;
 
-    public final boolean[][] tu_residual_act_flag;
+    public boolean[][] tu_residual_act_flag;
 
     //public bool[,][] split_transform_flag;
-    public final boolean[][][] cbf_cb;
-    public final boolean[][][] cbf_cr;
-    public final boolean[][][] cbf_luma;
+    public boolean[][][] cbf_cb;
+    public boolean[][][] cbf_cr;
+    public boolean[][][] cbf_luma;
 
     //public bool[,][] transform_skip_flag;
-    public final boolean[][][] explicit_rdpcm_flag;
-    public final boolean[][][] explicit_rdpcm_dir_flag;
+    public boolean[][][] explicit_rdpcm_flag;
+    public boolean[][][] explicit_rdpcm_dir_flag;
 
     public int[] pcm_sample_luma;
     public int[] pcm_sample_chroma;
 
-    public final /*UInt16*/int[][][] pixels;
+    public /*Byte*/byte[][][] pixels;
+    public /*UInt16*/int[][][] pixels_high_color_range;
 
     public HeicPicture(slice_segment_header slice_header, NalHeader nal_header)
     {
@@ -100,8 +100,12 @@ public class HeicPicture
         sao_offset_abs = new int[chroma_count][][][];
         sao_offset_sign = new int[chroma_count][][][];
         sao_band_position = new int[chroma_count][][];
-        pixels = new /*UInt16*/int[chroma_count][][];
         TransCoeffLevel = new int[chroma_count][][];
+
+        if ((sps.getBitDepthY() & 0xFF) > 8 || (sps.getBitDepthC() & 0xFF) > 8)
+            pixels_high_color_range = new /*UInt16*/int[chroma_count][][];
+        else
+            pixels = new /*Byte*/byte[chroma_count][][];
 
         for (int i = 0; i < chroma_count; i++)
         {
@@ -113,8 +117,12 @@ public class HeicPicture
             sao_offset_sign[i] = new int[(int)(sps.getPicWidthInCtbsY())][(int)(sps.getPicHeightInCtbsY())][];
             sao_band_position[i] = new int[(int)(sps.getPicWidthInCtbsY())][(int)(sps.getPicHeightInCtbsY())];
 
-            pixels[i] = new /*UInt16*/int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
             TransCoeffLevel[i] = new int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
+
+            if ((sps.getBitDepthY() & 0xFF) > 8 || (sps.getBitDepthC() & 0xFF) > 8)
+                pixels_high_color_range[i] = new /*UInt16*/int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
+            else
+                pixels[i] = new /*Byte*/byte[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
         }
 
         CtDepth = new int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
@@ -147,6 +155,42 @@ public class HeicPicture
         explicit_rdpcm_dir_flag = new boolean[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)][];
     }
 
+    public final void cleanMemory()
+    {
+        SaoTypeIdx = null;
+        SaoOffsetVal = null;
+        SaoEoClass = null;
+        ResScaleVal = null;
+        sao_offset_abs = null;
+        sao_offset_sign = null;
+        sao_band_position = null;
+        SliceAddrRs = null;
+        SliceHeaderIndex = null;
+        IntraPredModeY = null;
+        IntraPredModeC = null;
+        TransCoeffLevel = null;
+        CtDepth = null;
+        CuPredMode = null;
+        QpY = null;
+        Log2CbSize = null;
+        merge_flag = null;
+        cu_skip_flag = null;
+        palette_mode_flag = null;
+        pcm_flag = null;
+        prev_intra_luma_pred_flag = null;
+        mpm_idx = null;
+        rem_intra_luma_pred_mode = null;
+        intra_chroma_pred_mode = null;
+        tu_residual_act_flag = null;
+        cbf_cb = null;
+        cbf_cr = null;
+        cbf_luma = null;
+        explicit_rdpcm_flag = null;
+        explicit_rdpcm_dir_flag = null;
+        pcm_sample_luma = null;
+        pcm_sample_chroma = null;
+    }
+
     // 6.4.1 Derivation process for z-scan order block availability
     // 
     // The luma location ( xCurr, yCurr ) of the top-left sample of the current block
@@ -154,7 +198,7 @@ public class HeicPicture
     //
     // The luma location ( xNbY, yNbY ) covered by a neighbouring block relative
     // to the top-left luma sample of the current picture.
-    final boolean checkZScanAvaliability(int xCurr, int yCurr, int xNbY, int yNbY)
+    final boolean checkZScanAvailability(int xCurr, int yCurr, int xNbY, int yNbY)
     {
         if (xNbY < 0 || yNbY < 0)
             return false;
@@ -163,10 +207,10 @@ public class HeicPicture
             return false;
 
         // The minimum luma block address in z-scan order minBlockAddrCurr of the current block
-        /*UInt32*/long minBlockAddrCurr = pps.MinTbAddrZs[xCurr >> (sps.getMinTbLog2SizeY() & 0xFF)][yCurr >> (sps.getMinTbLog2SizeY() & 0xFF)];
+        /*UInt32*/long minBlockAddrCurr = pps.MinTbAddrZs[xCurr >> (sps.getMinTbLog2SizeY() & 0xFF)][yCurr >> (sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
         // The minimum luma block address in z-scan order minBlockAddrN of the neighbouring block covering the location (xNbY, yNbY)
-        /*UInt32*/long minBlockAddrN = pps.MinTbAddrZs[xNbY >> (sps.getMinTbLog2SizeY() & 0xFF)][yNbY >> (sps.getMinTbLog2SizeY() & 0xFF)];
+        /*UInt32*/long minBlockAddrN = pps.MinTbAddrZs[xNbY >> (sps.getMinTbLog2SizeY() & 0xFF)][yNbY >> (sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
         if ((minBlockAddrN & 0xFFFFFFFFL) > (minBlockAddrCurr & 0xFFFFFFFFL))
             return false;
@@ -207,7 +251,7 @@ public class HeicPicture
     // relative to the top-left luma sample of the current picture
     //
     // Output of this process is the availability of the neighbouring prediction block covering the location ( xNbY, yNbY )
-    final boolean checkPredictionAvaliability(int xCb, int yCb, int nCbS, int xPb, int yPb, int nPbW, int nPbH, int partIdx, int xNbY, int yNbY)
+    final boolean checkPredictionAvailability(int xCb, int yCb, int nCbS, int xPb, int yPb, int nPbW, int nPbH, int partIdx, int xNbY, int yNbY)
     {
         boolean sameCb =
             (xCb <= xNbY) && (yCb <= yNbY) &&
@@ -217,7 +261,7 @@ public class HeicPicture
 
         if (!sameCb)
         {
-            availableN = checkZScanAvaliability(xPb, yPb, xNbY, yNbY);
+            availableN = checkZScanAvailability(xPb, yPb, xNbY, yNbY);
         }
         else
         {

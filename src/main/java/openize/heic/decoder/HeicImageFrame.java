@@ -13,10 +13,7 @@ package openize.heic.decoder;
 import openize.heic.decoder.io.BitStreamWithNalSupport;
 import openize.isobmff.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -30,7 +27,15 @@ public class HeicImageFrame
     private static final List<String> gStringSwitchMap = Arrays.asList(
                     "urn:mpeg:hevc:2015:auxid:1\u0000",
                     "urn:mpeg:hevc:2015:auxid:2\u0000",
-                    "urn:com:apple:photo:2020:aux:hdrgainmap\u0000"
+                    "portraiteffectsmatte\u0000",
+                    "semanticskinmatte\u0000",
+                    "semantichairmatte\u0000",
+                    "semanticteethmatte\u0000",
+                    "semanticglassesmatte\u0000",
+                    "semanticskymatte\u0000",
+                    "hdrgainmap\u0000",
+                    "styledeltamap\u0000",
+                    "linearthumbnail\u0000"
                     );
     private final /*UInt32*/ long id;
     private final IlocItem locationBox;
@@ -49,21 +54,78 @@ public class HeicImageFrame
      * </p>
      */
     HEVCDecoderConfigurationRecord hvcConfig;
+
     /**
      * <p>
-     * Raw YUV pixel data.
-     * Multidimantional array: chroma or luma index, then two-dimentional array with x and y navigation.
+     * Raw YUV pixel data, used when a bit's depth is less or equal 8.
+     * Multidimensional array: chroma or luma index, then two-dimensional array with x and y navigation.
      * </p>
      */
-    /*UInt16*/ int[][][] rawPixels;
+    /*Byte*/byte[][][] rawPixels;
+
+    /**
+     * <p>
+     * Raw YUV pixel data, used when a bit's depth is greater than 8.
+     * Multidimensional array: chroma or luma index, then two-dimensional array with x and y navigation.
+     * </p>
+     */
+    /*UInt16*/int[][][] rawPixelsHighColorRange;
+
+    /**
+     * <p>
+     * Contains the pixel aspect ratio information.
+     * This is an unused field that is created for debugging.
+     * </p>
+     */
+    private PixelAspectRatioBox pasp = null;
+
+    /**
+     * <p>
+     * Contains colour information.
+     * This is an unused field that is created for debugging.
+     * </p>
+     */
+    private ColourInformationBox colr = null;
+
+    /**
+     * <p>
+     * The unique identifier of the image frame.
+     * </p>
+     */
+    public final /*UInt32*/long getID() { return id; }
+
     private boolean cashed;
     private /*UInt32*/ long ispeWidth;
     private /*UInt32*/ long ispeHeight;
     private final boolean isHidden;
+
+    /**
+     * <p>
+     * Indicates the type of auxiliary reference layer if the frame type is auxiliary.
+     * </p>
+     */
     private AuxiliaryReferenceType auxiliaryReferenceType;
+
+    /**
+     * <p>
+     * Number of channels with color data.
+     * </p>
+     */
     private  byte numberOfChannels;
+
+    /**
+     * <p>
+     * Bits per channel with color data.
+     * </p>
+     */
     private  byte[] bitsPerChannel;
-    private Long autoalphaReference = null;
+
+    /**
+     * <p>
+     * Indicates the presence of transparency of layer.
+     * </p>
+     */
+    private Long alphaReference = null;
     private  byte imageRotationAngle;
     private  byte imageMirrorAxis;
 
@@ -74,16 +136,15 @@ public class HeicImageFrame
      *
      * @param stream     File stream.
      * @param parent     Parent image.
-     * @param id         Frame identificator.
-     * @param properties Frame properties described in container.
+     * @param id         Frame identifier.
      */
-    HeicImageFrame(BitStreamWithNalSupport stream, HeicImage parent, /*UInt32*/long id, List<Box> properties)
+    HeicImageFrame(BitStreamWithNalSupport stream, HeicImage parent, /*UInt32*/long id)
     {
         derivativeType = (parent.getHeader().getDerivedType(id));
         ItemInfoEntry informationBox = parent.getHeader().getInfoBoxById(id);
         locationBox = parent.getHeader().getLocationBoxById(id);
 
-        setAuxiliaryReferenceType(AuxiliaryReferenceType.Undefined);
+        this.auxiliaryReferenceType = AuxiliaryReferenceType.Undefined;
         imageType = ImageFrameType.codeToType(informationBox.item_type & 0xFFFFFFFFL);
         isHidden = informationBox.item_hidden;
 
@@ -91,8 +152,6 @@ public class HeicImageFrame
         this.stream = stream;
         this.parent = parent;
         cashed = false;
-
-        loadProperties(stream, properties);
     }
 
     /**
@@ -137,7 +196,7 @@ public class HeicImageFrame
      */
     public final boolean hasAlpha()
     {
-        return autoalphaReference != null;
+        return alphaReference != null;
     }
 
     /**
@@ -196,17 +255,6 @@ public class HeicImageFrame
     public final AuxiliaryReferenceType getAuxiliaryReferenceType()
     {
         return auxiliaryReferenceType;
-    }
-
-    /**
-     * <p>
-     * Indicates the type of auxiliary reference layer if the frame type is auxiliary.
-     * </p>
-     * @param value the type of auxiliary reference layer if the frame type is auxiliary.
-     */
-    private void setAuxiliaryReferenceType(AuxiliaryReferenceType value)
-    {
-        auxiliaryReferenceType = value;
     }
 
     /**
@@ -284,7 +332,7 @@ public class HeicImageFrame
 
         
         byte[][][] threeDim = getMultidimArray(boundsRectangle);
-        threeDim = applyPixelFormat(threeDim, pixelFormat);
+        applyPixelFormat(threeDim, pixelFormat);
 
         int bpp = pixelFormat == PixelFormat.Rgb24 ? 3 : 4;
         
@@ -369,7 +417,7 @@ public class HeicImageFrame
         boundsRectangle = validateBounds(boundsRectangle);
 
         byte[][][] threeDim = getMultidimArray(boundsRectangle);
-        threeDim = applyPixelFormat(threeDim, pixelFormat);
+        applyPixelFormat(threeDim, pixelFormat);
 
         final int reqArraySize = boundsRectangle.getHeight() * boundsRectangle.getWidth();
 
@@ -408,7 +456,8 @@ public class HeicImageFrame
      */
     public final String getTextData()
     {
-        if (getImageType() != ImageFrameType.mime)
+        final ImageFrameType frameType = getImageType();
+        if (frameType != ImageFrameType.mime && frameType != ImageFrameType.uri)
         {
             return "";
         }
@@ -445,7 +494,128 @@ public class HeicImageFrame
     {
         if (Objects.requireNonNull(type) == AuxiliaryReferenceType.Alpha)
         {
-            this.autoalphaReference = id;
+            this.alphaReference = id;
+        }
+    }
+
+    /**
+     * <p>
+     * Load frame properties from Box and stream.
+     * </p>
+     * @param stream File stream.
+     * @param properties Frame properties described in container.
+     */
+    final void loadProperties(BitStreamWithNalSupport stream, List<Box> properties)
+    {
+        for (Box item : properties)
+        {
+            switch (item.type)
+            {
+                case hvcC: // hvcC
+                    HEVCConfigurationBox config = (HEVCConfigurationBox) item;
+                    stream.createNewImageContext(id);
+                    stream.setBytePosition(config.offset);
+                    hvcConfig = new HEVCDecoderConfigurationRecord(stream);
+                    config.record = hvcConfig; // gui
+                    break;
+                case ispe:
+                    ImageSpatialExtentsProperty ispe = (ImageSpatialExtentsProperty) item;
+                    ispeWidth = ispe.image_width;
+                    ispeHeight = ispe.image_height;
+                    break;
+                case pasp:
+                    pasp = (PixelAspectRatioBox) item;
+                    break;
+                case colr:
+                    colr = (ColourInformationBox) item;
+                    break;
+                case pixi:
+                    PixelInformationProperty pixi = (PixelInformationProperty) item;
+                    this.numberOfChannels = pixi.num_channels;
+                    this.bitsPerChannel = pixi.bits_per_channel;
+                    break;
+//                case rloc:
+//                    RelativeLocationProperty rloc = (RelativeLocationProperty) item;
+//                    break;
+                case auxC:
+                    AuxiliaryTypeProperty auxC = (AuxiliaryTypeProperty) item;
+
+                    this.auxiliaryReferenceType = AuxiliaryReferenceType.Undefined;
+
+                    switch (gStringSwitchMap.indexOf(auxC.aux_type))
+                    {
+                        case /*"urn:mpeg:hevc:2015:auxid:1\u0000"*/0:
+                            this.auxiliaryReferenceType = AuxiliaryReferenceType.Alpha;
+                            break;
+                        case /*"urn:mpeg:hevc:2015:auxid:2\u0000"*/1:
+                            this.auxiliaryReferenceType = AuxiliaryReferenceType.DepthMap;
+                            break;
+                        default:
+                            if (auxC.aux_type.contains("apple") && auxC.aux_type.contains(":aux:"))
+                            {
+                                switch (gStringSwitchMap.indexOf(auxC.aux_type.substring(auxC.aux_type.indexOf(":aux:") + 5)))
+                                {
+                                    case /*"portraiteffectsmatte\u0000"*/2:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.PortraitEffectsMatte;
+                                        break;
+                                    case /*"semanticskinmatte\u0000"*/3:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.SemanticSkinMatte;
+                                        break;
+                                    case /*"semantichairmatte\u0000"*/4:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.SemanticHairMatte;
+                                        break;
+                                    case /*"semanticteethmatte\u0000"*/5:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.SemanticTeethMatte;
+                                        break;
+                                    case /*"semanticglassesmatte\u0000"*/6:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.SemanticGlassesMatte;
+                                        break;
+                                    case /*"semanticskymatte\u0000"*/7:
+                                        auxiliaryReferenceType = AuxiliaryReferenceType.SemanticSkyMatte;
+                                        break;
+                                    case /*"hdrgainmap\u0000"*/8:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.HdrGainMap;
+                                        break;
+                                    case /*"styledeltamap\u0000"*/9:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.StyleDeltaMap;
+                                        break;
+                                    case /*"linearthumbnail\u0000"*/10:
+                                        this.auxiliaryReferenceType = AuxiliaryReferenceType.LinearThumbnail;
+                                        break;
+                                    default:
+                                        // Do nothing
+                                }
+                            }
+                            break;
+                    }
+
+                    /*UInt32*/
+                    long[] derived = parent.getHeader()
+                                           .getDerivedList(id);
+                    for (/*UInt32*/long derivedId : derived)
+                    {
+                        parent.getAllFrames()
+                              .get(derivedId)
+                              .addLayerReference(id, this.auxiliaryReferenceType);
+                    }
+                    break;
+//                case clap:
+//                    CleanApertureBox clap = (CleanApertureBox) item;
+//                    break;
+                case irot:
+                    ImageRotation irot = (ImageRotation) item;
+                    this.imageRotationAngle = irot.angle;
+                    break;
+//                case lsel:
+//                    LayerSelectorProperty lsel = (LayerSelectorProperty) item;
+//                    break;
+                case imir:
+                    ImageMirror imir = (ImageMirror) item;
+                    this.imageMirrorAxis = (/*Byte*/byte) ((imir.axis & 0xFF) + 1);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
@@ -494,7 +664,7 @@ public class HeicImageFrame
         }
 
         rgba = transformImage(rgba);
-        rgba = addAlphaLayer(rgba, boundsRectangle);
+        addAlphaLayer(rgba, boundsRectangle);
 
         return rgba;
     }
@@ -515,13 +685,13 @@ public class HeicImageFrame
         return boundsRectangle;
     }
 
-    private byte[][][] addAlphaLayer(byte[][][] pixels, Rectangle boundsRectangle)
+    private void addAlphaLayer(byte[][][] pixels, Rectangle boundsRectangle)
     {
-        if (autoalphaReference == null)
+        if (alphaReference == null)
         {
-            return pixels;
+            return;
         }
-        long tmp0 = autoalphaReference & 0xFFFFFFFFL;
+        long tmp0 = alphaReference & 0xFFFFFFFFL;
 
         byte[][][] alpha = parent.getAllFrames().get(tmp0).getMultidimArray(boundsRectangle);
 
@@ -534,7 +704,6 @@ public class HeicImageFrame
                 pixels[(int) (col)][(int) (row)][3] = alpha[(int) (col)][(int) (row)][0];
             }
         }
-        return pixels;
     }
 
     private byte[][][] transformImage(byte[][][] pixels)
@@ -601,11 +770,11 @@ public class HeicImageFrame
         return rotated;
     }
 
-    private byte[][][] applyPixelFormat(byte[][][] rgba, PixelFormat pixelFormat)
+    private void applyPixelFormat(byte[][][] rgba, PixelFormat pixelFormat)
     {
         if (pixelFormat == PixelFormat.Rgba32 || pixelFormat == PixelFormat.Rgb24)
         {
-            return rgba;
+            return;
         }
 
         byte r, g, b, a;
@@ -638,10 +807,9 @@ public class HeicImageFrame
                 }
             }
         }
-        return rgba;
     }
 
-    private /*UInt16*/int[][][] loadHvcRawPixels()
+    private void loadHvcRawPixels()
     {
         stream.setCurrentImageId(id);
         stream.setBytePosition(((locationBox.base_offset & 0xFFFFFFFFL) + (locationBox.extents[0].offset & 0xFFFFFFFFL)) & 0xFFFFFFFFL);
@@ -656,16 +824,19 @@ public class HeicImageFrame
         }
 
         if (stream.getContext().getPictures().containsKey(id))
+        {
             rawPixels = stream.getContext().getPictures().get(id).pixels;
+            rawPixelsHighColorRange = stream.getContext().getPictures().get(id).pixels_high_color_range;
+        }
         else
         {
             rawPixels = null;
-            throw new IllegalArgumentException(String.format("Image #%d was not loaded [NalUnit not found].", id));
+            rawPixelsHighColorRange = null;
+            throw new NoSuchElementException(String.format("Image #%d was not loaded [NalUnit not found].", id));
         }
 
         cashed = true;
         stream.deleteImageContext(id);
-        return rawPixels;
     }
 
     private byte[][][] getByteArrayForGrid(byte[] databox)
@@ -806,81 +977,50 @@ public class HeicImageFrame
         return value;
     }
 
-    private void loadProperties(BitStreamWithNalSupport stream, List<Box> properties)
+    @Override
+    public String toString()
     {
-        for (Box item : properties)
+        StringBuilder line = new StringBuilder(255);
+        line.append('[').append(id).append(',').append(this.imageType).append("] ");
+
+        if (colr != null)
+            line.append(colr.getColourType()).append(' ');
+
+        final byte[] bitsPerChannel1 = getBitsPerChannel();
+        if (bitsPerChannel1 != null)
+            line.append('(').append(Arrays.toString(bitsPerChannel1)).append(") ");
+
+        if (ispeWidth > 0)
+            line.append(ispeWidth).append('x').append(ispeHeight).append(' ');
+
+        if (imageRotationAngle > 0)
+            line.append(imageRotationAngle*90).append("° ");
+
+        if (auxiliaryReferenceType != AuxiliaryReferenceType.Undefined)
+            line.append(auxiliaryReferenceType).append(' ');
+
+        if (derivativeType != null)
         {
-            switch (item.type)
+            switch (derivativeType)
             {
-                case hvcC:
-                    HEVCConfigurationBox config = (HEVCConfigurationBox) item;
-                    stream.createNewImageContext(id);
-                    stream.setBytePosition(config.offset);
-                    hvcConfig = new HEVCDecoderConfigurationRecord(stream);
-                    config.record = hvcConfig; // gui
+                case dimg:
+                    line.append("Derived: ");
                     break;
-                case ispe:
-                    ImageSpatialExtentsProperty ispe = (ImageSpatialExtentsProperty) item;
-                    ispeWidth = ispe.image_width;
-                    ispeHeight = ispe.image_height;
+                case auxl:
+                    line.append("Auxiliary: ");
                     break;
-                case pasp:
-                    //PixelAspectRatioBox pasp = (PixelAspectRatioBox) item;
+                case cdsc:
+                    line.append("Content desc.: ");
                     break;
-                case colr:
-                    //ColourInformationBox colr = (ColourInformationBox) item;
-                    break;
-                case pixi:
-                    PixelInformationProperty pixi = (PixelInformationProperty) item;
-                    this.numberOfChannels = pixi.num_channels;
-                    this.bitsPerChannel = pixi.bits_per_channel;
-                    break;
-                case rloc:
-                    //RelativeLocationProperty rloc = (RelativeLocationProperty) item;
-                    break;
-                case auxC:
-                    AuxiliaryTypeProperty auxC = (AuxiliaryTypeProperty) item;
-
-                    setAuxiliaryReferenceType(AuxiliaryReferenceType.Undefined);
-
-                    switch (gStringSwitchMap.indexOf(auxC.aux_type))
-                    {
-                        case /*"urn:mpeg:hevc:2015:auxid:1\u0000"*/0:
-                            setAuxiliaryReferenceType(AuxiliaryReferenceType.Alpha);
-                            break;
-                        case /*"urn:mpeg:hevc:2015:auxid:2\u0000"*/1:
-                            setAuxiliaryReferenceType(AuxiliaryReferenceType.DepthMap);
-                            break;
-                        case /*"urn:com:apple:photo:2020:aux:hdrgainmap\u0000"*/2:
-                            setAuxiliaryReferenceType(AuxiliaryReferenceType.Hdr);
-                            break;
-                    }
-
-                    /*UInt32*/
-                    long[] derived = parent.getHeader().getDerivedList(id);
-                    for (/*UInt32*/long derivedId : derived)
-                    {
-                        parent.getAllFrames().get(derivedId).addLayerReference(id, getAuxiliaryReferenceType());
-                    }
-                    break;
-                case clap:
-                    //CleanApertureBox clap = (CleanApertureBox) item;
-                    break;
-                case irot:
-                    ImageRotation irot = (ImageRotation) item;
-                    imageRotationAngle = irot.angle;
-                    break;
-                case lsel:
-                    //LayerSelectorProperty lsel = (LayerSelectorProperty) item;
-                    break;
-                case imir:
-                    ImageMirror imir = (ImageMirror) item;
-                    imageMirrorAxis = ((byte) ((imir.axis & 0xFF) + 1));
-                    break;
-                default:
+                case thmb:
+                    line.append("Thumbnail: ");
                     break;
             }
+
+            long[] derived = parent.getHeader().getDerivedList(id);
+            line.append(Arrays.toString(derived));
         }
+
+        return line.toString();
     }
 }
-

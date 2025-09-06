@@ -3,6 +3,12 @@
 Contains colour information about the image.
 If colour information is supplied in both this box, and also in the video bitstream, this box takes precedence, and over‐rides the information in the bitstream.
 
+## Properties
+
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**ColourType** | **String** | Color type code as a string. | 
+
 ## Methods
 
 Name | Type | Description | Notes

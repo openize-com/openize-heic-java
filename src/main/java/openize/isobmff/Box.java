@@ -172,6 +172,9 @@ public class Box
             case colr:
                 box = new ColourInformationBox(stream, size);
                 break;
+            case clli:
+                box = new ContentLightLevelInfo(stream, size);
+                break;
             case pixi:
                 box = new PixelInformationProperty(stream, size);
                 break;

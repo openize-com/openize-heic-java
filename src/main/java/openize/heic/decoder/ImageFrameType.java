@@ -13,11 +13,13 @@ package openize.heic.decoder;
 
 /**
  * <p>
- * Type of an image frame.
+ * Type of image frame.
  * </p>
  */
 public enum ImageFrameType /*: uint*/
 {
+    unknown(0L),
+
     /**
      * <p>
      * HEVC coded image frame.
@@ -63,15 +65,49 @@ public enum ImageFrameType /*: uint*/
      * Resource Description Framework metadata.
      * </p>
      */
-    mime(0x6d696d65L);
+    mime(0x6d696d65L),
 
+    /**
+     * <p>
+     * Tone map.
+     * HDR metadata.
+     * </p>
+     */
+    tmap(0x746d6170),
+
+    /**
+     * <p>
+     * Uri.
+     * </p>
+     */
+    uri(0x75726920);
+
+    /**
+     * <p>
+     * The code of the image frame type.
+     * </p>
+     */
     private final long code;
 
+    /**
+     * <p>
+     * The image frame type.
+     * </p>
+     *
+     * @param code The code of the image frame type.
+     */
     ImageFrameType(long code)
     {
         this.code = code;
     }
 
+    /**
+     * <p>
+     *     Returns the ImageFrameType with the given {@code code} or {@link ImageFrameType#unknown}.
+     * </p>
+     * @param code The code of the box type.
+     * @return The BoxType value.
+     */
     public static ImageFrameType codeToType(long code)
     {
         for (ImageFrameType type : _values)
@@ -82,13 +118,23 @@ public enum ImageFrameType /*: uint*/
             }
         }
 
-        throw new IllegalArgumentException("code is incorrect " + code);
+        return unknown;
     }
 
+    /**
+     * <p>
+     *     Returns the code of frame type.
+     * </p>
+     */
     public long getCode()
     {
         return code;
     }
 
+    /**
+     * <p>
+     *     The cached values.
+     * </p>
+     */
     private static final ImageFrameType[] _values = ImageFrameType.values();
 }

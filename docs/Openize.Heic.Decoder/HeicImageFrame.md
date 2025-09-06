@@ -7,6 +7,7 @@ Contains hevc coded data or meta data.
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**ID** | **long** | The unique identifier of the image frame. | 
 **ImageType** | **ImageFrameType** | Type of an image frame content. | 
 **Width** | **long** | Width of the image frame in pixels. | 
 **Height** | **long** | Height of the image frame in pixels. | 
@@ -26,12 +27,15 @@ Name | Type | Description | Parameters
 **getByteArray** | **byte[]** | Get pixel data in the format of byte array.<br />Each three or four bytes (the count depends on the pixel format) refer to one pixel left to right top to bottom line by line.<br />Returns null if frame does not contain image data. In general, it equals to ***dstArray***. | **PixelFormat **<br/>***pixelFormat*** - Pixel format that defines the order of colors and the presence of alpha byte.<br />**Rectangle**<br/>***boundsRectangle*** - Bounds of the requested area.<br/>**byte[]**<br/>***dstArray*** - Byte array for storing the pixel values. If it is `null` or its length is less than necessary the new array will be allocated and returned.
 **getInt32Array** | **int[]** | Get pixel data in the format of integer array.<br />Each int value refers to one pixel left to right top to bottom line by line.<br />Returns null if frame does not contain image data. In general, it equals to ***dstArray***. | **PixelFormat**<br/>***pixelFormat*** - Pixel format that defines the order of colors.<br />**Rectangle**<br/>***boundsRectangle*** - Bounds of the requested area.<br/>**int[]**<br/>***dstArray*** - Integer array for storing the argb values. If it is `null` or its length is less than necessary the new array will be allocated and returned.
 **getTextData** | **String** | Get frame text data.<br />Exists only for mime frame types. | 
+**toString** | **String** | Returns a string representation of the object. |  | 
 
 ## Fields
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **hvcConfig** | **HEVCDecoderConfigurationRecord** | Hevc decoder configuration information from Isobmff container. | 
-**rawPixels** | **int[][][]** | Raw YUV pixel data. <br />Multidimantional array: chroma or luma index, then two-dimentional array with x and y navigation. | 
+**rawPixels** | **byte[][][]** | Raw YUV pixel data, used when bit depth is less or equal 8. <br />Multi-dimensional array: chroma or luma index, then two-dimensional array with x and y navigation. | 
+**rawPixelsHighColorRange** | **int[][][]** | Raw YUV pixel data, used when bit depth is greater than 8. <br />Multi-dimensional array: chroma or luma index, then two-dimensional array with x and y navigation. | 
+
 
 [[Back to API_README]](API_README.md)

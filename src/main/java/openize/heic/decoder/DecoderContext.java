@@ -255,7 +255,7 @@ public class DecoderContext
     private int getNeighbouringQpY(HeicPicture picture, slice_segment_header slice_header, int qPY_PREV,
         int xQg, int yQg, int xQgN, int yQgN)
     {
-        if (!picture.checkZScanAvaliability(xQg, yQg, xQgN, yQgN))
+        if (!picture.checkZScanAvailability(xQg, yQg, xQgN, yQgN))
         {
             return qPY_PREV;
         }
@@ -263,7 +263,7 @@ public class DecoderContext
         {
             int xTmp = xQgN >> (picture.sps.getMinTbLog2SizeY() & 0xFF);
             int yTmp = yQgN >> (picture.sps.getMinTbLog2SizeY() & 0xFF);
-            int minTbAddrA = (int)picture.pps.MinTbAddrZs[xTmp][yTmp];
+            int minTbAddrA = picture.pps.MinTbAddrZs[xTmp][yTmp];
             int ctbAddrA = minTbAddrA >> (2 * ((picture.sps.getCtbLog2SizeY() & 0xFF) - (picture.sps.getMinTbLog2SizeY() & 0xFF)));
 
             if (ctbAddrA != (slice_header.getCtbAddrInTs() & 0xFFFFFFFFL))

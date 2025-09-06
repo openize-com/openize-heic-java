@@ -14,6 +14,7 @@ Name | Type | Description | Notes
 **iprp** | **ItemPropertiesBox** | Item properties box. | 
 **iref** | **ItemReferenceBox** | Item reference box. | 
 **idat** | **ItemDataBox** | Item data box. | 
+**grpl** | **GroupsListBox** | Item group box. | 
 
 ## Methods
 

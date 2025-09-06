@@ -13,11 +13,13 @@ package openize.heic.decoder.io;
 import openize.heic.decoder.Cabac;
 import openize.heic.decoder.CabacType;
 import openize.heic.decoder.DecoderContext;
+import openize.heic.decoder.HeicPicture;
 import openize.io.IOSeekMode;
 import openize.io.IOStream;
 import openize.isobmff.io.BitStreamReader;
 
 import java.util.HashMap;
+import java.util.Map;
 
 
 /**
@@ -98,7 +100,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
 
     /**
      * <p>
-     * Current image identificator.
+     * Current image identifier.
      * </p>
      */
     public final /*UInt32*/long getCurrentImageId()
@@ -108,7 +110,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
 
     /**
      * <p>
-     * Current image identificator.
+     * Current image identifier.
      * </p>
      */
     public final void setCurrentImageId(/*UInt32*/long value)
@@ -121,7 +123,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
      * Creates an image context object.
      * </p>
      *
-     * @param imageId Image identificator.
+     * @param imageId Image identifier.
      */
     public final void createNewImageContext(/*UInt32*/long imageId)
     {
@@ -137,16 +139,25 @@ public class BitStreamWithNalSupport extends BitStreamReader
      * Deletes the image context object by id.
      * </p>
      *
-     * @param imageId Image identificator.
+     * @param imageId Image identifier.
      */
     public final void deleteImageContext(/*UInt32*/long imageId)
     {
+        for (Map.Entry<Long, HeicPicture> entry : contextDictionary.get(imageId)
+                                                                   .getPictures()
+                                                                   .entrySet())
+        {
+            entry.getValue().cleanMemory();
+        }
+
         contextDictionary.remove(imageId);
+
+        System.gc();
     }
 
     /**
      * <p>
-     * Turns on Nal Unit reader mode which ignores specified by standart byte sequences.
+     * Turns on Nal Unit reader mode which ignores specified by standard byte sequences.
      * </p>
      */
     public final void turnOnNalUnitMode()

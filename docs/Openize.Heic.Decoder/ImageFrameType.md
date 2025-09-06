@@ -12,5 +12,7 @@ Name | Value | Description | Notes
 **grid** | 0x67726964 | Image Grid.<br />Reconstructing a grid of input images of the same width and height. | 
 **Exif** | 0x45786966 | Exif metadata.<br />Exchangeable image file format metadata. | 
 **mime** | 0x6d696d65 | MIME metadata.<br />Resource Description Framework metadata. | 
+**tmap** | 0x746d6170 | Tone map.<br />HDR metadata. | 
+**uri** | 0x75726920 | Uri. | 
 
 [[Back to API_README]](API_README.md)

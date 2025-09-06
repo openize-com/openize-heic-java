@@ -16,14 +16,30 @@ Openize.HEIC has support for:
 * multiple images in a file;
 * alpha channels, depth maps, thumbnails, auxiliary images;
 * correct color transform according to embedded color profiles;
-* image transformations (crop, mirror, rotate), overlay images.
+* image transformations (crop, mirror, rotate), overlay images;
+* reading XML metadata.
 
 Openize.HEIC doesn't support:
 * HDR images;
-* reading EXIF and XMP metadata;
+* reading EXIF metadata;
 * color transform according to EXIF contained color profiles;
 * HEIC coded animations that use P and B slices;
 * deblocking filter.
+
+
+## New features & enhancements in version 25.9.0:
+
+- Added `ContentLightLevelInfo` box parsing;
+- Added access to more metadata (including ColourType, GroupsListBox, etc.);
+- Added `toString` summary method to image frame;
+- Improved parallel processing for enhanced stability;
+- Changed the way `Frames` property is calculated (altr group logic and no thumbnails);
+- Changed frame properties loading to support iOS18+ files;
+- Added box types used in iOS18+ files;
+- Performed memory optimizations;
+- API markdown fixes;
+- Minor spelling fixes.
+
 
 ## Usage examples
 
@@ -158,9 +174,12 @@ Name | Type | Description | Parameters | Notes
 #### Properties
 Name | Type | Description
 ------------ | ------------- | ------------- 
+**Header** | **HeicHeader** | Heic image header. Grants convinient access to IsoBmff container meta data.
 **Frames** | **Map<Long, HeicImageFrame>** | Dictionary of public Heic image frames with access by identifier. 
 **AllFrames** | **Map<Long, HeicImageFrame>** | Dictionary of all Heic image frames with access by identifier. 
 **DefaultFrame** | **HeicImageFrame** | Returns the default image frame, which is specified in meta data. 
+**Width** | **long** | Width of the default image frame in pixels.
+**Height** | **long** | Height of the default image frame in pixels.
 
 ### HeicImageFrame
 
@@ -170,10 +189,12 @@ Name | Type | Description | Parameters
 **getByteArray** | **byte[]** | Get pixel data in the format of byte array. Each three or four bytes (the count depends on the pixel format) refer to one pixel left to right top to bottom line by line. In general, it equals to `dstArray`. | `PixelFormat pixelFormat` - Pixel format that defines the order of colors and the presence of alpha byte. `Rectangle boundsRectangle` - Bounds of the requested area.<br/>`byte[] dstArray` - Byte array for storing the pixel values. If it is `null` or its length is less than necessary the new array will be allocated and returned.
 **getInt32Array** | **int[]** | Get pixel data in the format of integer array. Each int value refers to one pixel left to right top to bottom line by line. In general, it equals to `dstArray`. | `PixelFormat pixelFormat` - Pixel format that defines the order of colors. `Rectangle boundsRectangle` - Bounds of the requested area.<br/>`int[] dstArray` - Integer array for storing the argb values. If it is `null` or its length is less than necessary the new array will be allocated and returned.
 **getTextData** | **String** | Get frame text data. Exists only for mime frame types. | 
+**toString** | **String** | Returns a string representation of the object. | 
 
 ### Properties
 Name | Type | Description
 ------------ | ------------- | ------------- 
+**ID** | **long** | The unique identifier of the image frame.
 **ImageType** | **ImageFrameType** | Type of an image frame content.
 **Width** | **long** | Width of the image frame in pixels. 
 **Height** | **long** | Height of the image frame in pixels.

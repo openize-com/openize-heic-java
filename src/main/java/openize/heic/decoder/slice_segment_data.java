@@ -30,7 +30,7 @@ public class slice_segment_data
 
         if (picture.SliceAddrRs == null)
         {
-            picture.SliceAddrRs = new /*UInt32*/long[(int) (sps.getPicWidthInCtbsY())][(int) (sps.getPicHeightInCtbsY())];
+            picture.SliceAddrRs = new /*UInt32*/int[(int) (sps.getPicWidthInCtbsY())][(int) (sps.getPicHeightInCtbsY())];
         }
 
         if (picture.SliceHeaderIndex == null)

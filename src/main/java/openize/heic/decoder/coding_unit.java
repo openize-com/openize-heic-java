@@ -114,8 +114,8 @@ class coding_unit
                             for (int i = 0; i < nCbS; i += pbOffset)
                                 picture.prev_intra_luma_pred_flag[x0 + i][y0 + j] = stream.getCabac().read_prev_intra_luma_pred_flag();
 
-                        boolean availableL0 = picture.checkZScanAvaliability(x0, y0, x0 - 1, y0);
-                        boolean availableA0 = picture.checkZScanAvaliability(x0, y0, x0, y0 - 1);
+                        boolean availableL0 = picture.checkZScanAvailability(x0, y0, x0 - 1, y0);
+                        boolean availableA0 = picture.checkZScanAvailability(x0, y0, x0, y0 - 1);
 
                         int log2blkSize = (_PartMode == PartMode.PART_NxN) ? (log2CbSize - 1) : log2CbSize;
                         //int pbSize = 1 << (log2blkSize - (sps.MinCbLog2SizeY - 1));

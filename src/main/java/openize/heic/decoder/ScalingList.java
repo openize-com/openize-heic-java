@@ -14,44 +14,42 @@ package openize.heic.decoder;
 
 class Scaling
 {
-    // Table 7-3 – Specification of sizeId
-    //
-    // sizeId   Size of quantization matrix
-    // 0        4x4
-    // 1        8x8
-    // 2        16x16
-    // 3        32x32
-
-    // Table 7-4 – Specification of matrixId according to sizeId, prediction mode and colour component 
-    //
-    // sizeId       CuPredMode   cIdx   matrixId
-    // 0, 1, 2, 3   MODE_INTRA  0 (Y)   0
-    // 0, 1, 2, 3   MODE_INTRA  1 (Cb)  1
-    // 0, 1, 2, 3   MODE_INTRA  2 (Cr)  2
-    // 0, 1, 2, 3   MODE_INTER  0 (Y)   3
-    // 0, 1, 2, 3   MODE_INTER  1 (Cb)  4
-    // 0, 1, 2, 3   MODE_INTER  2 (Cr)  5
-
+    /**
+     * <p>
+     *     Returns the scaling table.
+     * </p>
+     * Table 7-3 – Specification of sizeId<br/>
+     * <br/>
+     * sizeId   Size of quantization matrix<br/>
+     * 0        4x4<br/>
+     * 1        8x8<br/>
+     * 2        16x16<br/>
+     * 3        32x32<br/>
+     * <br/>
+     * Table 7-4 – Specification of matrixId according to sizeId, prediction mode and colour component <br/>
+     * <br/>
+     * sizeId       CuPredMode   cIdx   matrixId<br/>
+     * 0, 1, 2, 3   MODE_INTRA  0 (Y)   0<br/>
+     * 0, 1, 2, 3   MODE_INTRA  1 (Cb)  1<br/>
+     * 0, 1, 2, 3   MODE_INTRA  2 (Cr)  2<br/>
+     * 0, 1, 2, 3   MODE_INTER  0 (Y)   3<br/>
+     * 0, 1, 2, 3   MODE_INTER  1 (Cb)  4<br/>
+     * 0, 1, 2, 3   MODE_INTER  2 (Cr)  5<br/>
+     */
     static int[][][][] getScalingFactor(){ return scalingFactor; }
-    // Table 7-3 – Specification of sizeId
-    //
-    // sizeId   Size of quantization matrix
-    // 0        4x4
-    // 1        8x8
-    // 2        16x16
-    // 3        32x32
 
-    // Table 7-4 – Specification of matrixId according to sizeId, prediction mode and colour component 
-    //
-    // sizeId       CuPredMode   cIdx   matrixId
-    // 0, 1, 2, 3   MODE_INTRA  0 (Y)   0
-    // 0, 1, 2, 3   MODE_INTRA  1 (Cb)  1
-    // 0, 1, 2, 3   MODE_INTRA  2 (Cr)  2
-    // 0, 1, 2, 3   MODE_INTER  0 (Y)   3
-    // 0, 1, 2, 3   MODE_INTER  1 (Cb)  4
-    // 0, 1, 2, 3   MODE_INTER  2 (Cr)  5
+    /**
+     * <p>
+     *     Table 7-3 – Specification of sizeId
+     * </p>
+     */
     private static int[][][][] scalingFactor;
 
+    /**
+     * <p>
+     *
+     * </p>
+     */
     private static final int[] scaling_list_4x4 = {
         16,16,16,16,
         16,16,16,16,
@@ -81,36 +79,38 @@ class Scaling
         41,41,54,54,54,71,71,91
     };
 
+    /**
+     * <p>
+     *     Initializes the scaling tables based on {@code sps}
+     * </p>
+     */
     static synchronized void initiate(seq_parameter_set_rbsp sps)
     {
-        if (getScalingFactor() != null)
+        if (scalingFactor != null)
         {
             return;
         }
 
-        scalingFactor = new int[4][][][];
-
-        for (int i = 0; i < 4; i++)
-            getScalingFactor()[i] = new int[6][][];
+        scalingFactor = new int[4][6][][];
 
         int sizeId = 0, x, y;
 
         for (int matrixId = 0; matrixId < 6; matrixId++)
         {
-            getScalingFactor()[0][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
+            scalingFactor[0][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
 
             for (int i = 0; i < 16; i++)
             {
                 x = Scans.getScanOrder()[2][0][i][0] & 0xFF;
                 y = Scans.getScanOrder()[2][0][i][1] & 0xFF;
-                getScalingFactor()[0][matrixId][x][y] = scaling_list_4x4[i]; 
+                scalingFactor[0][matrixId][x][y] = scaling_list_4x4[i];
             }
         }
 
         sizeId = 1;
         for (int matrixId = 0; matrixId < 6; matrixId++)
         {
-            getScalingFactor()[1][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
+            scalingFactor[1][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
 
             for (int i = 0; i < 64; i++)
             {
@@ -118,16 +118,16 @@ class Scaling
                 y = Scans.getScanOrder()[3][0][i][1] & 0xFF;
 
                 if (matrixId < 3)
-                    getScalingFactor()[1][matrixId][x][y] = scaling_list_8x8_intra[i];
+                    scalingFactor[1][matrixId][x][y] = scaling_list_8x8_intra[i];
                 else
-                    getScalingFactor()[1][matrixId][x][y] = scaling_list_8x8_inter[i];
+                    scalingFactor[1][matrixId][x][y] = scaling_list_8x8_inter[i];
             }
         }
 
         sizeId = 2;
         for (int matrixId = 0; matrixId < 6; matrixId++)
         {
-            getScalingFactor()[2][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
+            scalingFactor[2][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
 
             for (int i = 0; i < 64; i++)
             {
@@ -139,21 +139,21 @@ class Scaling
                     for (int k = 0; k < 2; k++)
                     {
                         if (matrixId < 3)
-                            getScalingFactor()[2][matrixId][x * 2 + k][y * 2 + j] = scaling_list_8x8_intra[i];
+                            scalingFactor[2][matrixId][x * 2 + k][y * 2 + j] = scaling_list_8x8_intra[i];
                         else
-                            getScalingFactor()[2][matrixId][x * 2 + k][y * 2 + j] = scaling_list_8x8_inter[i];
+                            scalingFactor[2][matrixId][x * 2 + k][y * 2 + j] = scaling_list_8x8_inter[i];
                     }
                 }
             }
 
             if (sps.sps_scaling_list_data_present_flag)
-                getScalingFactor()[2][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[0][matrixId] + 8;
+                scalingFactor[2][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[0][matrixId] + 8;
         }
 
         sizeId = 3;
         for (int matrixId = 0; matrixId < 6; matrixId++)
         {
-            getScalingFactor()[3][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
+            scalingFactor[3][matrixId] = new int[1 << (2 + sizeId)][1 << (2 + sizeId)];
 
             for (int i = 0; i < 64; i++)
             {
@@ -165,9 +165,9 @@ class Scaling
                     for (int k = 0; k < 4; k++)
                     {
                         if (matrixId < 3)
-                            getScalingFactor()[3][matrixId][x * 4 + k][y * 4 + j] = scaling_list_8x8_intra[i];
+                            scalingFactor[3][matrixId][x * 4 + k][y * 4 + j] = scaling_list_8x8_intra[i];
                         else
-                            getScalingFactor()[3][matrixId][x * 4 + k][y * 4 + j] = scaling_list_8x8_inter[i];
+                            scalingFactor[3][matrixId][x * 4 + k][y * 4 + j] = scaling_list_8x8_inter[i];
                     }
                 }
             }
@@ -175,11 +175,10 @@ class Scaling
             if (sps.sps_scaling_list_data_present_flag)
             {
                 if (matrixId == 0 || matrixId == 3)
-                    getScalingFactor()[3][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[1][matrixId] + 8;
+                    scalingFactor[3][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[1][matrixId] + 8;
                 else
-                    getScalingFactor()[3][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[0][matrixId] + 8;
+                    scalingFactor[3][matrixId][0][0] = sps.scaling_list_data.scaling_list_dc_coef_minus8[0][matrixId] + 8;
             }
         }
     }
 }
-

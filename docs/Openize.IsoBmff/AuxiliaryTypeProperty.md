@@ -3,11 +3,11 @@
 AuxiliaryTypeProperty box includes a URN identifying the type of the auxiliary image.
 AuxiliaryTypeProperty may additionally include other fields, as required by the URN.
 
-## Properties
+## Methods
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ToString** | **String** | Text summary of the box. | 
+**toString** | **String** | Text summary of the box. | 
 
 ## Fields
 

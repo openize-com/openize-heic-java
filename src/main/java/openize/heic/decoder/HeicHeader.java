@@ -20,7 +20,7 @@ import java.util.Optional;
 
 /**
  * <p>
- * Heic image header class. Grants convenient access to IsoBmff container meta data.
+ * Heic image header class. Grants convenient access to IsoBmff metadata container.
  * </p>
  */
 public class HeicHeader
@@ -166,5 +166,19 @@ public class HeicHeader
         final Optional<SingleItemTypeReferenceBox> firstItem = getiref.references.stream().filter((i) -> i.from_item_ID == id).findFirst();
         return firstItem.map(singleItemTypeReferenceBox -> singleItemTypeReferenceBox.type).orElse(null);
     }
-}
 
+    /**
+     * <p>
+     * Returns the list of EntityToGroupBox's if they exist.
+     * </p>
+     * @return List of EntityToGroupBox.
+     */
+    final  List<EntityToGroupBox> getGroupsIfPresent()
+    {
+        final GroupsListBox grplBox = this.meta.getgrpl();
+        if (grplBox == null)
+            return null;
+
+        return grplBox.boxes;
+    }
+}

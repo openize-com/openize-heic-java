@@ -267,7 +267,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         PredMode cuPredMode = picture.CuPredMode[x0][y0];
         IntraPredMode intraPredMode;
 
-        int residualDpcm = 0;
+//        int residualDpcm = 0;
         int nTbS = 1 << log2TrafoSize;
         int[][] samples; // = new int[nTbS][nTbS];
 
@@ -279,9 +279,9 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
             samples = decodeIntraPrediction(stream, picture, x0, y0, intraPredMode, nTbS, cIdx);
 
-            residualDpcm = picture.sps.sps_range_ext.implicit_rdpcm_enabled_flag &&
-                    (stream.getContext().cu_transquant_bypass_flag || stream.getContext().transform_skip_flag[cIdx]) &&
-                    (intraPredMode.ordinal() == 10 || intraPredMode.ordinal() == 26) ? 1 : 0;
+//            residualDpcm = picture.sps.sps_range_ext.implicit_rdpcm_enabled_flag &&
+//                    (stream.getContext().cu_transquant_bypass_flag || stream.getContext().transform_skip_flag[cIdx]) &&
+//                    (intraPredMode.ordinal() == 10 || intraPredMode.ordinal() == 26) ? 1 : 0;
         }
         else
         {
@@ -298,10 +298,20 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
         int bitDepth = ((cIdx == 0) ? picture.sps.getBitDepthY() : picture.sps.getBitDepthC()) & 0xFF;
 
-        for (int y = 0; y < nTbS; y++)
-            for (int x = 0; x < nTbS; x++)
-                picture.pixels[cIdx][x0 + x][y0 + y] =
-                        MathExtra.clipBitDepth(samples[x][y] + transSamples[x][y], bitDepth) & 0xFFFF;
+        if ((picture.sps.getBitDepthY() & 0xFF) > 8 || (picture.sps.getBitDepthC() & 0xFF) > 8)
+        {
+            for (int y = 0; y < nTbS; y++)
+                for (int x = 0; x < nTbS; x++)
+                    picture.pixels_high_color_range[cIdx][x0 + x][y0 + y] =
+                            MathExtra.clipBitDepth(samples[x][y] + transSamples[x][y], bitDepth) & 0xFFFF;
+        }
+        else
+        {
+            for (int y = 0; y < nTbS; y++)
+                for (int x = 0; x < nTbS; x++)
+                    picture.pixels[cIdx][x0 + x][y0 + y] =
+                            (/*Byte*/byte)MathExtra.clipBitDepth(samples[x][y] + transSamples[x][y], bitDepth);
+        }
     }
 
     // 8.4.4.2.1 General intra sample prediction

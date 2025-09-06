@@ -10,6 +10,8 @@
 
 package openize.heic.tests;
 
+import openize.heic.decoder.HeicImage;
+import openize.heic.decoder.PixelFormat;
 import openize.io.IOFileStream;
 import openize.io.IOMode;
 import org.testng.Assert;
@@ -183,6 +185,16 @@ public class TestsCore
 
                 canRead = read_bytes_from_stream == bytesToRead && index < data.length;
             }
+        }
+    }
+
+    public void processImageFile(String fileName)
+    {
+        try (IOFileStream fs = new IOFileStream(Paths.get(getSamplesPath(), fileName), IOMode.READ))
+        {
+            HeicImage image = HeicImage.load(fs);
+            byte[] pixels = image.getByteArray(PixelFormat.Argb32);
+            compareWithReference(fileName, pixels);
         }
     }
 }

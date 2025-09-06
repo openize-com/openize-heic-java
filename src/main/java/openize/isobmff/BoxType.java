@@ -21,6 +21,13 @@ public enum BoxType
 {
     /**
      * <p>
+     * Unknown type.
+     * </p>
+     */
+    unknown(0),
+
+    /**
+     * <p>
      * File type and compatibility. Located in the root.
      * </p>
      */
@@ -217,6 +224,13 @@ public enum BoxType
 
     /**
      * <p>
+     * Content light level info. Located in the 'clli' box.
+     * </p>
+     */
+    clli(0x636c6c69),
+
+    /**
+     * <p>
      * Bit depth item property. Located in the 'ipco' box.
      * </p>
      */
@@ -356,17 +370,36 @@ public enum BoxType
     uuid(0x75756964);
 
     /**
+     * <p>Cached values</p>
+     */
+    private static final BoxType[] _values = BoxType.values();
+
+    /**
      * <p>
      * The code of the box type.
      * </p>
      */
     private final long code;
 
+    /**
+     * <p>
+     * The box type.
+     * </p>
+     *
+     * @param code The code of the box type.
+     */
     BoxType(long code)
     {
         this.code = code;
     }
 
+    /**
+     * <p>
+     *     Returns the BoxType with the given {@code code} or {@link BoxType#unknown}.
+     * </p>
+     * @param code The code of the box type.
+     * @return The BoxType value.
+     */
     public static BoxType codeToType(long code)
     {
         code &= 0xFFFFFFFFL;
@@ -377,7 +410,8 @@ public enum BoxType
                 return type;
             }
         }
-        throw new IllegalArgumentException(String.valueOf(code));
+
+        return unknown;
     }
 
     /**
@@ -391,6 +425,4 @@ public enum BoxType
     {
         return code;
     }
-
-    private static final BoxType[] _values = BoxType.values();
 }

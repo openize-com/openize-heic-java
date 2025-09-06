@@ -25,7 +25,7 @@ class coding_tree_unit
         int xCtb = (int)((header.getCtbAddrInRs() & 0xFFFFFFFFL) % (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) << (sps.getCtbLog2SizeY() & 0xFF);
         int yCtb = (int)((header.getCtbAddrInRs() & 0xFFFFFFFFL) / (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) << (sps.getCtbLog2SizeY() & 0xFF);
 
-        picture.SliceAddrRs[xCtb >> (sps.getCtbLog2SizeY() & 0xFF)][yCtb >> (sps.getCtbLog2SizeY() & 0xFF)] = header.getSliceAddrRs();
+        picture.SliceAddrRs[xCtb >> (sps.getCtbLog2SizeY() & 0xFF)][yCtb >> (sps.getCtbLog2SizeY() & 0xFF)] = (int)header.getSliceAddrRs();
         picture.SliceHeaderIndex[xCtb][yCtb] = header.slice_index;
 
         if (header.slice_sao_luma_flag || header.slice_sao_chroma_flag)

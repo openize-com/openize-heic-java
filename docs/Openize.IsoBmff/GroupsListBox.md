@@ -6,7 +6,7 @@ An entity group is a grouping of items, which may also group tracks. The entitie
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Children** | **ObservableCollection<Box>** | Observable collection of the nested boxes. | 
+**Children** | **ObservableCollection<GroupsListBox>** | Observable collection of the nested boxes. | 
 
 ## Methods
 
@@ -18,7 +18,7 @@ Name | Type | Description | Notes
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**boxes** | **List<Box>** | List of nested boxes. | 
+**boxes** | **List<GroupsListBox>** | List of nested boxes. | 
 
 ## Constructors
 

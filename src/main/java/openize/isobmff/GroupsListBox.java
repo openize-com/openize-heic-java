@@ -29,8 +29,14 @@ public class GroupsListBox extends Box
      * List of nested boxes.
      * </p>
      */
-    private final List<Box> boxes;
-    private ObservableCollection<Box> children;
+    public final List<EntityToGroupBox> boxes;
+
+    /**
+     * <p>
+     *     Observable collection of the nested boxes.
+     * </p>
+     */
+    private ObservableCollection<EntityToGroupBox> children;
 
     /**
      * <p>
@@ -71,7 +77,7 @@ public class GroupsListBox extends Box
      * Observable collection of the nested boxes.
      * </p>
      */
-    public final ObservableCollection<Box> getChildren()
+    public final ObservableCollection<EntityToGroupBox> getChildren()
     {
         return children;
     }
@@ -81,9 +87,8 @@ public class GroupsListBox extends Box
      * Observable collection of the nested boxes.
      * </p>
      */
-    public final void setChildren(ObservableCollection<Box> value)
+    public final void setChildren(ObservableCollection<EntityToGroupBox> value)
     {
         children = value;
     }
 }
-

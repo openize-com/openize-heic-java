@@ -16,7 +16,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 class scaling_list_data
 {
      boolean[][] scaling_list_pred_mode_flag;
-      /*UInt32*/ long[][] scaling_list_pred_matrix_id_delta;
+      /*UInt32*/ int[][] scaling_list_pred_matrix_id_delta;
     int[][] scaling_list_dc_coef_minus8;
 
         byte[][][] ScalingList;
@@ -24,7 +24,7 @@ class scaling_list_data
     public scaling_list_data(BitStreamWithNalSupport stream)
     {
         scaling_list_pred_mode_flag = new boolean[4][6];
-        scaling_list_pred_matrix_id_delta = new /*UInt32*/long[4][6];
+        scaling_list_pred_matrix_id_delta = new /*UInt32*/int[4][6];
         scaling_list_dc_coef_minus8 = new int[2][];
         ScalingList = new /*Byte*/byte[4][6][];
 
@@ -39,7 +39,7 @@ class scaling_list_data
                 scaling_list_pred_mode_flag[sizeId][matrixId] = stream.readFlag();
                 if (!scaling_list_pred_mode_flag[sizeId][matrixId])
                 {
-                    scaling_list_pred_matrix_id_delta[sizeId][matrixId] = stream.readUev();
+                    scaling_list_pred_matrix_id_delta[sizeId][matrixId] = (int)stream.readUev();
                 }
                 else
                 {
@@ -51,7 +51,7 @@ class scaling_list_data
                     if (sizeId > 1)
                     {
                         scaling_list_dc_coef_minus8[sizeId-2][matrixId] = stream.readSev();
-                        nextCoef = (int)scaling_list_dc_coef_minus8[sizeId-2][matrixId];
+                        nextCoef = scaling_list_dc_coef_minus8[sizeId-2][matrixId];
                     }
 
                     for (int i = 0; i < coefNum; i++)

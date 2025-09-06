@@ -1058,8 +1058,8 @@ public class Cabac
     private int getContextIndexFromNeighborState(int x0, int y0, HeicPicture picture, int cqtDepth)
     {
 
-        boolean availableL = picture.checkZScanAvaliability(x0, y0, x0 - 1, y0);
-        boolean availableA = picture.checkZScanAvaliability(x0, y0, x0, y0 - 1);
+        boolean availableL = picture.checkZScanAvailability(x0, y0, x0 - 1, y0);
+        boolean availableA = picture.checkZScanAvailability(x0, y0, x0, y0 - 1);
 
         boolean condL = x0 > 0 && picture.CtDepth[x0 - 1][y0] > cqtDepth;
         boolean condA = y0 > 0 && picture.CtDepth[x0][y0 - 1] > cqtDepth;

@@ -101,5 +101,14 @@ public class ColourInformationBox extends Box
     {
         return String.format("%s Color type: %s", this.type, uintToString(colour_type));
     }
-}
 
+    /**
+     * <p>
+     * Colour type code as a string.
+     * </p>
+     */
+    public final String getColourType()
+    {
+        return uintToString(colour_type);
+    }
+}

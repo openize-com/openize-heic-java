@@ -103,7 +103,7 @@ class NeighbouringSamplesGenerator
         int xRightCtb = (xBLuma + nTbS * SubWidth) >> ctbLog2Size;
         int yTopCtb = (yBLuma - 1) >> ctbLog2Size;
 
-        currCTBSlice = (int) picture.SliceAddrRs[xCurrCtb][yCurrCtb];
+        currCTBSlice = picture.SliceAddrRs[xCurrCtb][yCurrCtb];
         currCTBTileId = (int) picture.pps.TileIdFromRs[(int) (xCurrCtb + ((yCurrCtb * (picWidthInCtbs & 0xFFFFFFFFL)) & 0xFFFFFFFFL))];
 
         availableLeft = reCheckFlag(availableLeft, xLeftCtb, yCurrCtb);
@@ -112,9 +112,9 @@ class NeighbouringSamplesGenerator
         availableTopLeft = reCheckFlag(availableTopLeft, xLeftCtb, yTopCtb);
     }
 
-    private boolean reCheckFlag(boolean avaliable, int x, int y)
+    private boolean reCheckFlag(boolean available, int x, int y)
     {
-        if (avaliable)
+        if (available)
         {
             if (currCTBSlice != (picture.SliceAddrRs[x][y] & 0xFFFFFFFFL) ||
                     currCTBTileId != (picture.pps.TileIdFromRs[(int) (x + ((y * (picWidthInCtbs & 0xFFFFFFFFL)) & 0xFFFFFFFFL))] & 0xFFFFFFFFL))
@@ -123,7 +123,7 @@ class NeighbouringSamplesGenerator
             }
         }
 
-        return avaliable;
+        return available;
     }
 
     private NeighbouringSamples fillNeighbouringSamples()
@@ -147,7 +147,7 @@ class NeighbouringSamplesGenerator
 
         /*UInt32*/
         long currBlockAddr = picture.pps.MinTbAddrZs[
-                xBLuma >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][yBLuma >> (picture.sps.getMinTbLog2SizeY() & 0xFF)];
+                xBLuma >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][yBLuma >> (picture.sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
 
         NeighbouringSamples samples = new NeighbouringSamples(nTbS);
@@ -159,7 +159,7 @@ class NeighbouringSamplesGenerator
             {
                 /*UInt32*/
                 long NBlockAddr = picture.pps.MinTbAddrZs[
-                        ((x0 - 1) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 + y) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)];
+                        ((x0 - 1) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 + y) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
                 availableN = (NBlockAddr & 0xFFFFFFFFL) <= (currBlockAddr & 0xFFFFFFFFL);
 
@@ -173,16 +173,29 @@ class NeighbouringSamplesGenerator
 
                 if (availableN)
                 {
-                    if (nAvail == 0)
+                    if ((picture.sps.getBitDepthY() & 0xFF) > 8 || (picture.sps.getBitDepthC() & 0xFF) > 8)
                     {
-                        firstValue = picture.pixels[cIdx][x0 - 1][y0 + y];
-                    }
+                        if (nAvail == 0)
+                            firstValue = picture.pixels_high_color_range[cIdx][x0 - 1][y0 + y];
 
-                    for (int i = 0; i < 4; i++)
+                        for (int i = 0; i < 4; i++)
+                        {
+                            available.set(-1, y - i, true);
+                            samples.set(-1, y - i, picture.pixels_high_color_range[cIdx][x0 - 1][y0 + y - i]);
+                            nAvail++;
+                        }
+                    }
+                    else
                     {
-                        available.set(-1, y - i, true);
-                        samples.set(-1, y - i, picture.pixels[cIdx][x0 - 1][y0 + y - i]);
-                        nAvail++;
+                        if (nAvail == 0)
+                            firstValue = picture.pixels[cIdx][x0 - 1][y0 + y] & 0xFF;
+
+                        for (int i = 0; i < 4; i++)
+                        {
+                            available.set(-1, y - i, true);
+                            samples.set(-1, y - i, picture.pixels[cIdx][x0 - 1][y0 + y - i] & 0xFF);
+                            nAvail++;
+                        }
                     }
                 }
             }
@@ -192,7 +205,7 @@ class NeighbouringSamplesGenerator
         {
             /*UInt32*/
             long NBlockAddr = picture.pps.MinTbAddrZs[
-                    ((x0 - 1) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 - 1) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)];
+                    ((x0 - 1) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 - 1) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
             availableN = (NBlockAddr & 0xFFFFFFFFL) <= (currBlockAddr & 0xFFFFFFFFL);
 
@@ -206,14 +219,24 @@ class NeighbouringSamplesGenerator
 
             if (availableN)
             {
-                if (nAvail == 0)
+                if ((picture.sps.getBitDepthY() & 0xFF) > 8 || (picture.sps.getBitDepthC() & 0xFF) > 8)
                 {
-                    firstValue = picture.pixels[cIdx][x0 - 1][y0 - 1];
-                }
+                    if (nAvail == 0)
+                        firstValue = picture.pixels_high_color_range[cIdx][x0 - 1][y0 - 1];
 
-                available.set(-1, -1, true);
-                samples.set(-1, -1, picture.pixels[cIdx][x0 - 1][y0 - 1]);
-                nAvail++;
+                    available.set(-1, -1, true);
+                    samples.set(-1, -1, picture.pixels_high_color_range[cIdx][x0 - 1][y0 - 1]);
+                    nAvail++;
+                }
+                else
+                {
+                    if (nAvail == 0)
+                        firstValue = picture.pixels[cIdx][x0 - 1][y0 - 1] & 0xFF;
+
+                    available.set(-1, -1, true);
+                    samples.set(-1, -1, picture.pixels[cIdx][x0 - 1][y0 - 1] & 0xFF);
+                    nAvail++;
+                }
             }
         }
 
@@ -223,7 +246,7 @@ class NeighbouringSamplesGenerator
             {
                 /*UInt32*/
                 long NBlockAddr = picture.pps.MinTbAddrZs[
-                        ((x0 + x) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 - 1) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)];
+                        ((x0 + x) * SubWidth) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)][((y0 - 1) * SubHeight) >> (picture.sps.getMinTbLog2SizeY() & 0xFF)] & 0xFFFFFFFFL;
 
                 availableN = (NBlockAddr & 0xFFFFFFFFL) <= (currBlockAddr & 0xFFFFFFFFL);
 
@@ -235,19 +258,29 @@ class NeighbouringSamplesGenerator
                     }
                 }
 
-
                 if (availableN)
                 {
-                    if (nAvail == 0)
+                    if ((picture.sps.getBitDepthY() & 0xFF) > 8 || (picture.sps.getBitDepthC() & 0xFF) > 8)
                     {
-                        firstValue = picture.pixels[cIdx][x0 + x][y0 - 1];
-                    }
+                        if (nAvail == 0) firstValue = picture.pixels_high_color_range[cIdx][x0 + x][y0 - 1];
 
-                    for (int i = 0; i < 4; i++)
+                        for (int i = 0; i < 4; i++)
+                        {
+                            available.set(x + i, -1, true);
+                            samples.set(x + i, -1, picture.pixels_high_color_range[cIdx][x0 + x + i][y0 - 1]);
+                            nAvail++;
+                        }
+                    }
+                    else
                     {
-                        available.set(x + i, -1, true);
-                        samples.set(x + i, -1, picture.pixels[cIdx][x0 + x + i][y0 - 1]);
-                        nAvail++;
+                        if (nAvail == 0) firstValue = picture.pixels[cIdx][x0 + x][y0 - 1] & 0xFF;
+
+                        for (int i = 0; i < 4; i++)
+                        {
+                            available.set(x + i, -1, true);
+                            samples.set(x + i, -1, picture.pixels[cIdx][x0 + x + i][y0 - 1] & 0xFF);
+                            nAvail++;
+                        }
                     }
                 }
             }
@@ -286,4 +319,3 @@ class NeighbouringSamplesGenerator
         return samples;
     }
 }
-

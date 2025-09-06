@@ -67,7 +67,7 @@ class YuvConverter
 
         byte[][][] pixels = new byte[width][height][4];
 
-        if (picture.rawPixels == null)
+        if (picture.rawPixels == null && picture.rawPixelsHighColorRange == null)
             return pixels;
 
         double Y, Cr, Cb, R, G, B;
@@ -89,11 +89,16 @@ class YuvConverter
         final int configSpsSubHeightC = picture.hvcConfig.getSPS()
                                                          .getSubHeightC() & 0xFF;
 
+        boolean highColorRange = (picture.hvcConfig.getSPS().getBitDepthY() & 0xFF) > 8 || (picture.hvcConfig.getSPS().getBitDepthC() & 0xFF) > 8;
+
         for (int row = 0; row < height; row++)
         {
             for (int col = 0; col < width; col++)
             {
-                Y = picture.rawPixels[0][col][row] & 0xFFFF;
+                if (highColorRange)
+                    Y = picture.rawPixelsHighColorRange[0][col][row] & 0xFFFF;
+                else
+                    Y = picture.rawPixels[0][col][row] & 0xFF;
 
                 if (!fullRangeFlag)
                 {
@@ -108,8 +113,16 @@ class YuvConverter
                 }
                 else
                 {
-                    Cb = (picture.rawPixels[1][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
-                    Cr = (picture.rawPixels[2][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
+                    if (highColorRange)
+                    {
+                        Cb = (picture.rawPixelsHighColorRange[1][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
+                        Cr = (picture.rawPixelsHighColorRange[2][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
+                    }
+                    else
+                    {
+                        Cb = (picture.rawPixels[1][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFF) - chromaHalfRange;
+                        Cr = (picture.rawPixels[2][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFF) - chromaHalfRange;
+                    }
 
                     if (!fullRangeFlag)
                     {
