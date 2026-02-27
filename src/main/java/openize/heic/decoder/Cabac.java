@@ -209,7 +209,7 @@ public class Cabac
     final byte[] StatCoeff = new byte[4];
     // not implemented
     /*UInt32*/ long PredictorPaletteSize;
-    /*UInt16*/ int[][] PredictorPaletteEntries;
+    ///*UInt16*/ int[][] PredictorPaletteEntries;
     int ivlCurrRange;
     // not implemented
     int ivlOffset;
@@ -578,7 +578,7 @@ public class Cabac
             }
 
         return cMax;
-        // may be incorrect as not covered with tests. Another realisation:
+        // may be incorrect as not covered with tests. Another realization:
         // return DecodeGeneralForBinaryDecision(model[0]);
     }
 
@@ -1110,14 +1110,14 @@ public class Cabac
         ivlOffset = stream.read(9);
 
         int SliceQpY = slice_header.getSliceQPY();
-        int initType = slice_header.getinitType();
+        int initType = slice_header.getInitType();
 
         initializationOfContextVariables(SliceQpY, initType);
 
-        for (int i = 0; i < 4; i++)
-        {
-            StatCoeff[i] = 0;
-        }
+        StatCoeff[0] = 0;
+        StatCoeff[1] = 0;
+        StatCoeff[2] = 0;
+        StatCoeff[3] = 0;
 
         initializationOfPalettePredictorEntries(slice_header);
     }
@@ -1148,27 +1148,26 @@ public class Cabac
         {
             PredictorPaletteSize = pps.pps_scc_ext.pps_num_palette_predictor_initializers;
 
-            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][(int) (PredictorPaletteSize & 0xFFFFFFFFL)];
-
-            for (int comp = 0; comp < (numComps & 0xFF); comp++)
-                for (int i = 0; i < (PredictorPaletteSize & 0xFFFFFFFFL); i++)
-                    PredictorPaletteEntries[comp][i] = pps.pps_scc_ext.pps_palette_predictor_initializer[comp][i];
-
+//            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][(int) (PredictorPaletteSize & 0xFFFFFFFFL)];
+//
+//            for (int comp = 0; comp < (numComps & 0xFF); comp++)
+//                for (int i = 0; i < (PredictorPaletteSize & 0xFFFFFFFFL); i++)
+//                    PredictorPaletteEntries[comp][i] = pps.pps_scc_ext.pps_palette_predictor_initializer[comp][i];
         }
         else if ((sps.sps_scc_ext != null && sps.sps_scc_ext.sps_palette_predictor_initializers_present_flag))
         {
             PredictorPaletteSize = ((sps.sps_scc_ext.sps_num_palette_predictor_initializers_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL;
 
-            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][(int) (PredictorPaletteSize & 0xFFFFFFFFL)];
-
-            for (int comp = 0; comp < (numComps & 0xFF); comp++)
-                for (int i = 0; i < (PredictorPaletteSize & 0xFFFFFFFFL); i++)
-                    PredictorPaletteEntries[comp][i] = sps.sps_scc_ext.sps_palette_predictor_initializer[comp][i];
+//            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][(int) (PredictorPaletteSize & 0xFFFFFFFFL)];
+//
+//            for (int comp = 0; comp < (numComps & 0xFF); comp++)
+//                for (int i = 0; i < (PredictorPaletteSize & 0xFFFFFFFFL); i++)
+//                    PredictorPaletteEntries[comp][i] = sps.sps_scc_ext.sps_palette_predictor_initializer[comp][i];
         }
         else
         {
             PredictorPaletteSize = 0;
-            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][0];
+//            PredictorPaletteEntries = new /*UInt16*/int[numComps & 0xFF][0];
         }
 
     }

@@ -15,7 +15,6 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
 class transform_tree
 {
-    private final boolean split_transform_flag;
 
     public transform_tree(BitStreamWithNalSupport stream, slice_segment_header header,
                           boolean IntraSplitFlag, /*UInt32*/long MaxTrafoDepth, PartMode partMode,
@@ -37,6 +36,7 @@ class transform_tree
             picture.cbf_luma[x0][y0] = new boolean[(int) (((MaxTrafoDepth & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
         }
 
+        boolean split_transform_flag;
         if (log2TrafoSize <= (sps.getMaxTbLog2SizeY() & 0xFF) &&
                 log2TrafoSize > (sps.getMinTbLog2SizeY() & 0xFF) &&
                 trafoDepth < (MaxTrafoDepth & 0xFFFFFFFFL) &&

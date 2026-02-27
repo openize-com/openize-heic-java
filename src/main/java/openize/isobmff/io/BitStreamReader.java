@@ -136,14 +136,9 @@ public class BitStreamReader
     {
         final long streamPosition = stream.getPosition();
         final long streamLength = stream.getLength();
-        if (streamPosition + state.buffer.length > streamLength)
-        {
-            state.buffer = new byte[state.buffer.length];
-            state.bufferActiveLength = (int) (streamLength - streamPosition);
-        }
-
+        state.bufferActiveLength = Math.min((int) (streamLength - streamPosition), state.buffer.length);
         state.bufferPosition = 0;
-        return stream.read(state.buffer, 0, state.buffer.length);
+        return stream.read(state.buffer, 0, state.bufferActiveLength);
     }
 
     /**
@@ -181,7 +176,7 @@ public class BitStreamReader
                 state.bitIndex = 0;
                 state.bufferPosition++;
 
-                if (state.bufferPosition == state.buffer.length)
+                if (state.bufferPosition == state.bufferActiveLength)
                 {
                     fillBufferFromStream();
                 }
@@ -266,7 +261,7 @@ public class BitStreamReader
     {
         int remainingBits = bitsNumber;
 
-        int bitsInBuffer = Math.min(remainingBits, (state.buffer.length - state.bufferPosition) * 8 - state.bitIndex);
+        int bitsInBuffer = Math.min(remainingBits, (state.bufferActiveLength - state.bufferPosition) * 8 - state.bitIndex);
 
         int bitsToRead = Math.min(remainingBits, bitsInBuffer);
         read(bitsToRead);
@@ -286,7 +281,7 @@ public class BitStreamReader
         if (stream.getPosition() < stream.getLength())
         {
             final byte[] buffer = state.buffer;
-            stream.read(buffer, 0, buffer.length);
+            stream.read(buffer, 0, state.bufferActiveLength);
         }
         else
         {
@@ -398,6 +393,11 @@ public class BitStreamReader
             bitIndex = value;
         }
 
+        public int getBufferActiveLength()
+        {
+            return bufferActiveLength;
+        }
+
         /**
          * <p>
          * Resets buffer to empty state.
@@ -418,12 +418,18 @@ public class BitStreamReader
         @Override
         public final /*new*/ String toString()
         {
-            StringBuilder sb = new StringBuilder(buffer.length*2+1);
-            for (byte b : buffer)
+            StringBuilder sb = new StringBuilder(bufferActiveLength*2+1);
+            int count = bufferActiveLength;
+            if (count > 0)
             {
-                sb.append(String.format("%02x", b)).append(' ');
+                for (byte b : buffer)
+                {
+                    sb.append(String.format("%02x", b))
+                      .append(' ');
+                    if (--count <= 0) break;
+                }
+                sb.setLength(sb.length()-1);
             }
-            sb.setLength(sb.length()-1);
             return sb.toString();
         }
 

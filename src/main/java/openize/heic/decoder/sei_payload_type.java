@@ -1,6 +1,6 @@
 /*
- * Openize.HEIC 
- * Copyright (c) 2024-2025 Openize Pty Ltd. 
+ * Openize.HEIC
+ * Copyright (c) 2024-2025 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -9,11 +9,6 @@
  */
 
 package openize.heic.decoder;
-
-import openize.heic.decoder.io.BitStreamWithNalSupport;
-
-
-
 
 enum sei_payload_type
 {

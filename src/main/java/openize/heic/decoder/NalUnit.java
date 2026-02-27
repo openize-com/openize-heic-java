@@ -60,7 +60,7 @@ public class NalUnit
                     break;
                 case PREFIX_SEI_NUT: // 39
                 case SUFFIX_SEI_NUT: // 40
-                    nalUnit = new sei_payload_rbsp(stream, startPosition, size, type);
+                    nalUnit = new sei_payload_rbsp(stream, startPosition, size);
                     break;
                 default:
                     nalUnit = new NalUnit(stream, startPosition, size);

@@ -18,7 +18,7 @@ class ref_pic_lists_modification
 {
     final boolean ref_pic_list_modification_flag_l0;
     boolean ref_pic_list_modification_flag_l1;
-    final int[] list_entry_l0;
+    //final int[] list_entry_l0;
     int[] list_entry_l1;
 
     ref_pic_lists_modification(
@@ -29,15 +29,14 @@ class ref_pic_lists_modification
             pic_parameter_set_rbsp pps)
     {
         ref_pic_list_modification_flag_l0 = stream.readFlag();         // u(1)
-        list_entry_l0 = new int[(int) (((num_ref_idx_l0_active_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+        // list_entry_l0 = new int[(int) (((num_ref_idx_l0_active_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
 
         int NumPicTotalCurr = getNumPicTotalCurr(pps);
-
 
         if (ref_pic_list_modification_flag_l0)
         {
             for (int i = 0; i <= (num_ref_idx_l1_active_minus1 & 0xFFFFFFFFL); i++)
-                list_entry_l0[i] = stream.read(MathUtils.f64_s32(                   // u(v)
+                /*list_entry_l0[i] =*/ stream.read(MathUtils.f64_s32(                   // u(v)
                         MathUtils.ceiling(MathUtils.log(NumPicTotalCurr, 2))));
         }
 

@@ -103,7 +103,7 @@ class coding_unit
                         while (stream.notByteAligned())
                             stream.skipBits(1);  /* pcm_alignment_zero_bit */
 
-                        new pcm_sample(stream, header, x0, y0, log2CbSize);
+                        new pcm_sample(stream, header, log2CbSize);
                     }
                     else
                     {

@@ -27,7 +27,7 @@ class palette_coding
     int palette_run_prefix;
     int palette_run_suffix;
     int palette_escape_val;
-    final int[][] new_palette_entries;
+    //final int[][] new_palette_entries;
     private int numPredictedPaletteEntries;
     private int predictorPaletteSize; // IS NOT DEFINED
     private int[] paletteIndexIdc;
@@ -74,14 +74,14 @@ class palette_coding
 
         int numComps = ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 0) ? 1 : 3;
 
-        new_palette_entries = new int[numComps][];
+        //new_palette_entries = new int[numComps][];
         for (int cIdx = 0; cIdx < numComps; cIdx++)
         {
-            new_palette_entries[cIdx] = new int[num_signalled_palette_entries];
+            //new_palette_entries[cIdx] = new int[num_signalled_palette_entries];
 
             for (int i = 0; i < num_signalled_palette_entries; i++)
             {
-                new_palette_entries[cIdx][i] = stream.readAev(); // ae(v)
+                /*new_palette_entries[cIdx][i] =*/ stream.readAev(); // ae(v)
             }
         }
 

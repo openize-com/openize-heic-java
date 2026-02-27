@@ -59,7 +59,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
 
     public BitStreamWithNalSupport(IOStream stream)
     {
-        this(stream, 4);
+        this(stream, 4096);
     }
 
     /**
@@ -151,8 +151,6 @@ public class BitStreamWithNalSupport extends BitStreamReader
         }
 
         contextDictionary.remove(imageId);
-
-        System.gc();
     }
 
     /**
@@ -230,7 +228,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
                 state.setBitIndex(0);
                 state.setBufferPosition(state.getBufferPosition() + 1)/*Property++*/;
 
-                if (state.getBufferPosition() == state.getBuffer().length)
+                if (state.getBufferPosition() == state.getBufferActiveLength())
                 {
                     fillBufferFromStream();
                 }
@@ -245,7 +243,7 @@ public class BitStreamWithNalSupport extends BitStreamReader
                     _prevPrevReadByte = _prevReadByte;
                     _prevReadByte = (short)(state.getBuffer()[state.getBufferPosition()] & 0xFF);
                     state.setBufferPosition(state.getBufferPosition() + 1)/*Property++*/;
-                    if (state.getBufferPosition() == state.getBuffer().length)
+                    if (state.getBufferPosition() == state.getBufferActiveLength())
                     {
                         fillBufferFromStream();
                     }
@@ -300,17 +298,22 @@ public class BitStreamWithNalSupport extends BitStreamReader
     {
         int remainingBits = bitsNumber;
 
-        int bitsInBuffer = Math.min(remainingBits, (state.getBuffer().length - state.getBufferPosition()) * 8 - state.getBitIndex());
+        int bitsInBuffer = Math.min(remainingBits, (state.getBufferActiveLength() - state.getBufferPosition()) * 8 - state.getBitIndex());
 
         int bitsToRead = Math.min(remainingBits, bitsInBuffer);
-        read(bitsToRead);
-        remainingBits -= bitsToRead;
+
+        while (bitsToRead > 0)
+        {
+            int limitCount = Math.min(bitsToRead, 32);
+            read(limitCount);
+            bitsToRead -= limitCount;
+            remainingBits -= limitCount;
+        }
 
         if (remainingBits == 0)
         {
             return;
         }
-
 
         if (_nalMode)
         {
@@ -323,27 +326,15 @@ public class BitStreamWithNalSupport extends BitStreamReader
         else
         {
             stream.seek(remainingBits / 8, IOSeekMode.CURRENT);
-            remainingBits = remainingBits % 8;
-
-            state.setBufferPosition(0);
+            fillBufferFromStream();
             state.setBitIndex(0);
-
-            if (stream.getPosition() < stream.getLength())
-            {
-                stream.read(state.getBuffer());
-            }
-            else
-            {
-                state.setBufferPosition(-1);
-            }
+            remainingBits = remainingBits % 8;
         }
 
-        if (remainingBits == 0)
+        if (remainingBits != 0)
         {
-            return;
+            read(remainingBits);
         }
-
-        read(remainingBits);
     }
 
     /**

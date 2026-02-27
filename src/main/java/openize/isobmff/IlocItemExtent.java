@@ -13,14 +13,14 @@ package openize.isobmff;
 
 /**
  * <p>
- * Data class for organised storage on location data extents.
+ * Data class for organized storage on location data extents.
  * </p>
  */
 public class IlocItemExtent
 {
     /**
      * <p>
-     * An index as defined for the constructionmethod.
+     * An index as defined for the construction method.
      * </p>
      */
     public /*UInt32*/ long index;

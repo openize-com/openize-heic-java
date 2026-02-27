@@ -64,7 +64,7 @@ public class HeicImage
      */
     public static HeicImage load(IOStream stream)
     {
-        BitStreamWithNalSupport bitstream = new BitStreamWithNalSupport(stream, 4);
+        BitStreamWithNalSupport bitstream = new BitStreamWithNalSupport(stream, 4096);
         bitstream.setBytePosition(0);
 
         /*UInt64*/

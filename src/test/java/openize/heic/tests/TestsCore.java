@@ -150,7 +150,7 @@ public class TestsCore
 
         try (IOFileStream stream = new IOFileStream(Paths.get(getReferencePath(), outputFilename), IOMode.READ))
         {
-            final int bytesToRead = 32;
+            final int bytesToRead = 4096;
             int index = 0;
 
             Assert.assertEquals(stream.getLength(), data.length, String.format("Reference length do not match. " +

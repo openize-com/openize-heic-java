@@ -188,7 +188,16 @@ public class DecoderContext
         boolean firstQgInTile = false;
 
         if (picture.pps.tiles_enabled_flag)
-            throw new UnsupportedOperationException("Tile mode is not supported");
+        {
+            //firstQgInTile recalculated
+            if ((xQg & ctbLSBMask) == 0 && (yQg & ctbLSBMask) == 0)
+            {
+                int tileX = xQg >> picture.sps.getCtbLog2SizeY();
+                int tileY = yQg >> picture.sps.getCtbLog2SizeY();
+
+                firstQgInTile = picture.pps.check_if_tile_is_first(tileX, tileY);
+            }
+        }
 
         if (firstQgInSlice || firstQgInTile || (firstInCTBRow && picture.pps.entropy_coding_sync_enabled_flag))
         {

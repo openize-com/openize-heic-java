@@ -51,6 +51,6 @@ public class ImageMirror extends Box
     @Override
     public String toString()
     {
-        return this.type.name() + ((axis & 0xFF) == 0 ? "verticaly" : "horizontal") + " mirrored";
+        return this.type.name() + ((axis & 0xFF) == 0 ? "vertically" : "horizontal") + " mirrored";
     }
 }

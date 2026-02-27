@@ -22,14 +22,14 @@ public class ItemProtectionBox extends FullBox
 {
     /**
      * <p>
-     * Count of protection informarion schemas.
+     * Count of protection information schemas.
      * </p>
      */
     private final /*UInt16*/ int protection_count;
 
     /**
      * <p>
-     * Array of protecyion informarion schemas.
+     * Array of protection information schemas.
      * </p>
      */
     private final ProtectionSchemeInfoBox[] protection_information;

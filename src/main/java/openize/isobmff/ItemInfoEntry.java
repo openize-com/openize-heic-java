@@ -107,7 +107,7 @@ public class ItemInfoEntry extends FullBox
             if ((version & 0xFF) == 1)
             {
                 /*UInt32*/
-                long extension_type = stream.read(32) & 0xFFFFFFFFL; //optional
+                /*long extension_type =*/ stream.read(32); // & 0xFFFFFFFFL; //optional
                 //ItemInfoExtension(extension_type); //optional
                 throw new UnsupportedOperationException();
             }

@@ -31,9 +31,9 @@ public class seq_parameter_set_rbsp extends NalUnit
     final byte bit_depth_chroma_minus8;
     final byte log2_max_pic_order_cnt_lsb_minus4;
     final boolean sps_sub_layer_ordering_info_present_flag;
-    final /*UInt32*/ long[] sps_max_dec_pic_buffering_minus1;
-    final /*UInt32*/ long[] sps_max_num_reorder_pics;
-    final /*UInt32*/ long[] sps_max_latency_increase_plus1;
+    //final /*UInt32*/ long[] sps_max_dec_pic_buffering_minus1;
+//    final /*UInt32*/ long[] sps_max_num_reorder_pics;
+//    final /*UInt32*/ long[] sps_max_latency_increase_plus1;
     final byte log2_min_luma_coding_block_size_minus3;
     final byte log2_diff_max_min_luma_coding_block_size;
     final byte log2_min_luma_transform_block_size_minus2;
@@ -115,14 +115,14 @@ public class seq_parameter_set_rbsp extends NalUnit
         sps_sub_layer_ordering_info_present_flag = stream.readFlag();      // u(1)
 
         int layers_count = (sps_sub_layer_ordering_info_present_flag ? 0 : sps_max_sub_layers_minus1) & 0xFF;
-        sps_max_dec_pic_buffering_minus1 = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
-        sps_max_num_reorder_pics = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
-        sps_max_latency_increase_plus1 = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
+        //sps_max_dec_pic_buffering_minus1 = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
+//        sps_max_num_reorder_pics = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
+//        sps_max_latency_increase_plus1 = new /*UInt32*/long[(sps_max_sub_layers_minus1 & 0xFF) + 1];
         for (int i = layers_count; i <= (sps_max_sub_layers_minus1 & 0xFF); i++)
         {
-            sps_max_dec_pic_buffering_minus1[i] = stream.readUev();         // ue(v)
-            sps_max_num_reorder_pics[i] = stream.readUev();                // ue(v)
-            sps_max_latency_increase_plus1[i] = stream.readUev();          // ue(v)
+            /*sps_max_dec_pic_buffering_minus1[i] =*/ stream.readUev();         // ue(v)
+            /*sps_max_num_reorder_pics[i] =*/ stream.readUev();                // ue(v)
+            /*sps_max_latency_increase_plus1[i] =*/ stream.readUev();          // ue(v)
         }
 
         log2_min_luma_coding_block_size_minus3 = (byte) stream.readUev();          // ue(v)

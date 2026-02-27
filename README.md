@@ -53,7 +53,7 @@ try (IOFileStream fs = new IOFileStream("filename.heic", IOMode.READ))
 }
 ```
 
-### Convert .heic file to .jpg using Java ImageIO
+### Convert .heic file to JPEG using Java ImageIO
 
 ``` java
 try (IOFileStream fs = new IOFileStream("filename.heic", IOMode.READ))
@@ -61,25 +61,17 @@ try (IOFileStream fs = new IOFileStream("filename.heic", IOMode.READ))
     HeicImage image = HeicImage.load(fs);
      
     var width = (int)image.Width;
-    var height = (int)image.Height;	
-	BufferedImage image2 = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-
-	final int[] dstArray = ((DataBufferInt) image2.getRaster()
-                                                  .getDataBuffer()).getData();
-
-    int[] pixels = frames.get(key).getInt32Array(PixelFormat.Argb32, dstArray);
-
+    var height = (int)image.Height;
 	
-	if (pixels != dstArray)
-	{
-		image2.setRGB(0, 0, width, height, pixels, 0, width);
-	}
+	BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+	int[] pixels = image.getInt32Array(PixelFormat.Argb32);
+	bufferedImage.setRGB(0, 0, width, height, pixels, 0, width);
 	
-	ImageIO.write(image2, "JPEG", new File("output.jpg"));
+	ImageIO.write(image2, "JPG", new File("output.jpg"));
 }
 ```
 
-### Convert .heic file to .png using Java ImageIO
+### Convert .heic file to PNG using Java ImageIO
 ``` java
 try (IOFileStream fs = new IOFileStream("filename.heic", IOMode.READ))
 {
@@ -93,7 +85,7 @@ try (IOFileStream fs = new IOFileStream("filename.heic", IOMode.READ))
 	final int[] dstArray = ((DataBufferInt) image2.getRaster()
                                                   .getDataBuffer()).getData();
 
-    int[] pixels = frames.get(key).getInt32Array(PixelFormat.Argb32, dstArray);
+    int[] pixels = image.getInt32Array(PixelFormat.Argb32, dstArray);
 
 	if (pixels != dstArray)
 	{

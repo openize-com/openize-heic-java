@@ -13,16 +13,18 @@ package openize.heic.decoder;
 import openize.MathUtils;
 import openize.heic.decoder.io.BitStreamWithNalSupport;
 
+import java.util.Arrays;
+
 
 /*partial*/ class transform_unit
 {
-    final private int[][] transMatrix4x4 = {
+    static private final int[][] transMatrix4x4 = {
             {29, 55, 74, 84},
             {74, 74, 0, -74},
             {84, -29, -74, 55},
             {55, -84, 74, -29}
     };
-    final private int[][] transMatrix32x32 = {
+    static private final int[][] transMatrix32x32 = {
             {64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64, 64},
             {90, 90, 88, 85, 82, 78, 73, 67, 61, 54, 46, 38, 31, 22, 13, 4, -4, -13, -22, -31, -38, -46, -54, -61, -67, -73, -78, -82, -85, -88, -90, -90},
             {90, 87, 80, 70, 57, 43, 25, 9, -9, -25, -43, -57, -70, -80, -87, -90, -90, -87, -80, -70, -57, -43, -25, -9, 9, 25, 43, 57, 70, 80, 87, 90},
@@ -56,15 +58,15 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
             {9, -25, 43, -57, 70, -80, 87, -90, 90, -87, 80, -70, 57, -43, 25, -9, -9, 25, -43, 57, -70, 80, -87, 90, -90, 87, -80, 70, -57, 43, -25, 9},
             {4, -13, 22, -31, 38, -46, 54, -61, 67, -73, 78, -82, 85, -88, 90, -90, 90, -90, 88, -85, 82, -78, 73, -67, 61, -54, 46, -38, 31, -22, 13, -4}
     };
-    final private int[] levelScale = {40, 45, 51, 57, 64, 72};
+    static private final int[] levelScale = {40, 45, 51, 57, 64, 72};
     // Table 8-5
-    final private int[] intraPredAngleTable =
+    static private final int[] intraPredAngleTable =
             {
                     0, 0, 32, 26, 21, 17, 13, 9, 5, 2, 0, -2, -5, -9, -13, -17, -21, -26,
                     -32, -26, -21, -17, -13, -9, -5, -2, 0, 2, 5, 9, 13, 17, 21, 26, 32
             };
     // Table 8-6 further specifies the mapping table between predModeIntra and the inverse angle parameter invAngle.
-    final private int[] invAngleTable =
+    static private final int[] invAngleTable =
             {
                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                     -4096, -1638, -910, -630, -482, -390, -315, -256,
@@ -78,10 +80,12 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         seq_parameter_set_rbsp sps = header.pps.sps;
         HeicPicture picture = header.parentPicture;
 
-        int log2TrafoSizeC = Math.max(2, log2TrafoSize - ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 3 ? 0 : 1));
-        int cbfDepthC = trafoDepth - ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) != 3 && log2TrafoSize == 2 ? 1 : 0);
-        int xC = ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) != 3 && log2TrafoSize == 2) ? xBase : x0;
-        int yC = ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) != 3 && log2TrafoSize == 2) ? yBase : y0;
+        long chromaArrayType = header.pps.sps.getChromaArrayType();
+
+        int log2TrafoSizeC = Math.max(2, log2TrafoSize - (chromaArrayType == 3 ? 0 : 1));
+        int cbfDepthC = trafoDepth - (chromaArrayType != 3 && log2TrafoSize == 2 ? 1 : 0);
+        int xC = (chromaArrayType != 3 && log2TrafoSize == 2) ? xBase : x0;
+        int yC = (chromaArrayType != 3 && log2TrafoSize == 2) ? yBase : y0;
 
         int offset = 1 << log2TrafoSizeC;
 
@@ -89,16 +93,18 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         boolean cbfChroma =
                 picture.cbf_cb[xC][yC][cbfDepthC] ||
                         picture.cbf_cr[xC][yC][cbfDepthC] ||
-                        ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 2 &&
-                                (picture.cbf_cb[xC][yC + (1 << log2TrafoSizeC)][cbfDepthC] ||
-                                        picture.cbf_cr[xC][yC + (1 << log2TrafoSizeC)][cbfDepthC]));
+                        (chromaArrayType == 2 &&
+                                (picture.cbf_cb[xC][yC + (offset)][cbfDepthC] ||
+                                        picture.cbf_cr[xC][yC + (offset)][cbfDepthC]));
 
         if (cbfLuma || cbfChroma)
         {
-            int xP = (x0 >> (sps.getMinCbLog2SizeY() & 0xFF)) << (sps.getMinCbLog2SizeY() & 0xFF);
-            int yP = (y0 >> (sps.getMinCbLog2SizeY() & 0xFF)) << (sps.getMinCbLog2SizeY() & 0xFF);
-            int nCbS = 1 << (sps.getMinCbLog2SizeY() & 0xFF);
+            int minCbLog2SizeY = sps.getMinCbLog2SizeY() & 0xFF;
+            int xP = (x0 >> minCbLog2SizeY) << minCbLog2SizeY;
+            int yP = (y0 >> minCbLog2SizeY) << minCbLog2SizeY;
+            int nCbS = 1 << minCbLog2SizeY;
 
+            Cabac streamCabac = stream.getCabac();
             if (pps.pps_scc_ext.residual_adaptive_colour_transform_enabled_flag &&
                     (picture.CuPredMode[x0][y0] == PredMode.MODE_INTER ||
                             (partMode == PartMode.PART_2Nx2N && (picture.intra_chroma_pred_mode[x0][y0] & 0xFF) == 4) ||
@@ -107,54 +113,55 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
                                     (picture.intra_chroma_pred_mode[xP][yP + nCbS / 2] & 0xFF) == 4 &&
                                     (picture.intra_chroma_pred_mode[xP + nCbS / 2][yP + nCbS / 2] & 0xFF) == 4)))
             {
-                picture.tu_residual_act_flag[x0][y0] = stream.getCabac().read_tu_residual_act_flag();
+                picture.tu_residual_act_flag[x0][y0] = streamCabac.read_tu_residual_act_flag();
             }
 
             boolean decodeQp = false;
 
+            DecoderContext streamContext = stream.getContext();
             //delta_qp
-            if (header.pps.cu_qp_delta_enabled_flag && !stream.getContext().isCuQpDeltaCoded())
+            if (header.pps.cu_qp_delta_enabled_flag && !streamContext.isCuQpDeltaCoded())
             {
                 decodeQp = true;
-                stream.getContext().setCuQpDeltaCoded(true);
-                int cu_qp_delta_abs = stream.getCabac().read_cu_qp_delta_abs();
+                streamContext.setCuQpDeltaCoded(true);
+                int cu_qp_delta_abs = streamCabac.read_cu_qp_delta_abs();
 
                 if (cu_qp_delta_abs != 0)
                 {
-                    boolean cu_qp_delta_sign_flag = stream.getCabac().read_cu_qp_delta_sign_flag();
+                    boolean cu_qp_delta_sign_flag = streamCabac.read_cu_qp_delta_sign_flag();
 
-                    stream.getContext().setCuQpDeltaVal(cu_qp_delta_abs * (cu_qp_delta_sign_flag ? -1 : 1));
+                    streamContext.setCuQpDeltaVal(cu_qp_delta_abs * (cu_qp_delta_sign_flag ? -1 : 1));
                 }
             }
 
             //chroma_qp_offset
-            if (cbfChroma && !stream.getContext().cu_transquant_bypass_flag)
+            if (cbfChroma && !streamContext.cu_transquant_bypass_flag)
             {
-                if (header.cu_chroma_qp_offset_enabled_flag && !stream.getContext().isCuChromaQpOffsetCoded())
+                if (header.cu_chroma_qp_offset_enabled_flag && !streamContext.isCuChromaQpOffsetCoded())
                 {
                     decodeQp = true;
-                    stream.getContext().setCuChromaQpOffsetCoded(true);
-                    boolean cu_chroma_qp_offset_flag = stream.getCabac().read_cu_chroma_qp_offset_flag();
+                    streamContext.setCuChromaQpOffsetCoded(true);
+                    boolean cu_chroma_qp_offset_flag = streamCabac.read_cu_chroma_qp_offset_flag();
 
                     if (cu_chroma_qp_offset_flag && header.pps.pps_range_ext.chroma_qp_offset_list_len_minus1 > 0)
                     {
                         int cu_chroma_qp_offset_idx =
-                                stream.getCabac().read_cu_chroma_qp_offset_idx(header.pps.pps_range_ext.chroma_qp_offset_list_len_minus1);
+                                streamCabac.read_cu_chroma_qp_offset_idx(header.pps.pps_range_ext.chroma_qp_offset_list_len_minus1);
 
-                        stream.getContext().setCuQpOffsetCb(pps.pps_range_ext.cb_qp_offset_list[cu_chroma_qp_offset_idx]);
-                        stream.getContext().setCuQpOffsetCr(pps.pps_range_ext.cr_qp_offset_list[cu_chroma_qp_offset_idx]);
+                        streamContext.setCuQpOffsetCb(pps.pps_range_ext.cb_qp_offset_list[cu_chroma_qp_offset_idx]);
+                        streamContext.setCuQpOffsetCr(pps.pps_range_ext.cr_qp_offset_list[cu_chroma_qp_offset_idx]);
                     }
                     else
                     {
-                        stream.getContext().setCuQpOffsetCb(0);
-                        stream.getContext().setCuQpOffsetCr(0);
+                        streamContext.setCuQpOffsetCb(0);
+                        streamContext.setCuQpOffsetCr(0);
                     }
                 }
             }
 
             if (decodeQp)
             {
-                stream.getContext().derivationOfQuantizationParameters(stream, picture, x0, y0, xBase, yBase);
+                streamContext.derivationOfQuantizationParameters(stream, picture, x0, y0, xBase, yBase);
             }
         }
 
@@ -168,7 +175,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         //if (cbfLuma || cbfChroma)
         if ((sps.chroma_format_idc & 0xFFFFFFFFL) != 0) // this may be incorrect 
         {
-            if (log2TrafoSize > 2 || (header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 3)
+            if (log2TrafoSize > 2 || (chromaArrayType & 0xFFFFFFFFL) == 3)
             {
                 boolean res_scale_needed = cbfLuma &&
                         header.pps.pps_range_ext.cross_component_prediction_enabled_flag &&
@@ -187,7 +194,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                 decode(stream, header.parentPicture, x0 / (sps.getSubWidthC() & 0xFF), y0 / (sps.getSubHeightC() & 0xFF), trafoDepth, log2TrafoSizeC, 1);
 
-                if ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 2)
+                if ((chromaArrayType & 0xFFFFFFFFL) == 2)
                 {
                     if (picture.cbf_cb[x0][y0 + offset][trafoDepth])
                     {
@@ -210,7 +217,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                 decode(stream, header.parentPicture, x0 / (sps.getSubWidthC() & 0xFF), y0 / (sps.getSubHeightC() & 0xFF), trafoDepth, log2TrafoSizeC, 2);
 
-                if ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 2)
+                if ((chromaArrayType & 0xFFFFFFFFL) == 2)
                 {
                     if (picture.cbf_cr[x0][y0 + offset][trafoDepth])
                     {
@@ -230,7 +237,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                 decode(stream, header.parentPicture, xBase / (sps.getSubWidthC() & 0xFF), yBase / (sps.getSubHeightC() & 0xFF), trafoDepth, log2TrafoSize, 1);
 
-                if ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 2)
+                if (chromaArrayType == 2)
                 {
                     if (picture.cbf_cb[xBase][yBase + offset][trafoDepth - 1])
                     {
@@ -248,7 +255,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                 decode(stream, header.parentPicture, xBase / (sps.getSubWidthC() & 0xFF), yBase / (sps.getSubHeightC() & 0xFF), trafoDepth, log2TrafoSize, 2);
 
-                if ((header.pps.sps.getChromaArrayType() & 0xFFFFFFFFL) == 2)
+                if (chromaArrayType == 2)
                 {
                     if (picture.cbf_cr[xBase][yBase + offset][trafoDepth - 1])
                     {
@@ -300,17 +307,31 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
         if ((picture.sps.getBitDepthY() & 0xFF) > 8 || (picture.sps.getBitDepthC() & 0xFF) > 8)
         {
-            for (int y = 0; y < nTbS; y++)
-                for (int x = 0; x < nTbS; x++)
-                    picture.pixels_high_color_range[cIdx][x0 + x][y0 + y] =
-                            MathExtra.clipBitDepth(samples[x][y] + transSamples[x][y], bitDepth) & 0xFFFF;
+            for (int x = 0; x < nTbS; x++)
+            {
+                int[] pixel_hicolor_rangeIdxX = picture.pixels_high_color_range[cIdx][x0 + x];
+                int[] sampleX = samples[x];
+                int[] transSampleX = transSamples[x];
+                for (int y = 0; y < nTbS; y++)
+                {
+                    pixel_hicolor_rangeIdxX[y0 + y] =
+                            MathExtra.clipBitDepth(sampleX[y] + transSampleX[y], bitDepth) & 0xFFFF;
+                }
+            }
         }
         else
         {
-            for (int y = 0; y < nTbS; y++)
-                for (int x = 0; x < nTbS; x++)
-                    picture.pixels[cIdx][x0 + x][y0 + y] =
-                            (/*Byte*/byte)MathExtra.clipBitDepth(samples[x][y] + transSamples[x][y], bitDepth);
+            for (int x = 0; x < nTbS; x++)
+            {
+                byte[] pixelsIdxX = picture.pixels[cIdx][x0 + x];
+                int[] sampleX = samples[x];
+                int[] transSampleX = transSamples[x];
+                for (int y = 0; y < nTbS; y++)
+                {
+                    pixelsIdxX[y0 + y] =
+                            (/*Byte*/byte)MathExtra.clipBitDepth(sampleX[y] + transSampleX[y], bitDepth);
+                }
+            }
         }
     }
 
@@ -413,6 +434,8 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         return p;
     }
 
+    private int[][] decodeIntraPredictionPlanarBuffer;
+
     // 8.4.4.2.4 Specification of intra prediction mode INTRA_PLANAR
     private int[][] decodeIntraPredictionPlanar(HeicPicture picture, int nTbS, NeighbouringSamples p)
     {
@@ -421,17 +444,30 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         // – a variable nTbS specifying the transform block size.
         // Outputs of this process are the predicted samples predSamples[x][y], with x, y = 0..nTbS - 1.
 
-        int[][] predSamples = new int[nTbS][nTbS];
+        if (decodeIntraPredictionPlanarBuffer == null)
+        {
+            decodeIntraPredictionPlanarBuffer = new int[nTbS][nTbS];
+        }
 
+        int[][] predSamples = decodeIntraPredictionPlanarBuffer;
+
+        int tbsShift = MathUtils.f64_s32(MathUtils.log(nTbS, 2)) + 1;
         for (int x = 0; x < nTbS; x++)
+        {
+            int[] predSampleX = predSamples[x];
+            int tbs_1_X = nTbS - 1 - x;
             for (int y = 0; y < nTbS; y++)
-                predSamples[x][y] =
-                        ((nTbS - 1 - x) * (p.get(-1, y) & 0xFFFF) + (x + 1) * (p.get(nTbS, -1) & 0xFFFF) +
-                                (nTbS - 1 - y) * (p.get(x, -1) & 0xFFFF) + (y + 1) * (p.get(-1, nTbS) & 0xFFFF) + nTbS) >>
-                                (MathUtils.f64_s32(MathUtils.log(nTbS, 2)) + 1);
+            {
+                predSampleX[y] = (tbs_1_X * (p.get(-1, y) & 0xFFFF) + (x + 1) * (p.get(nTbS, -1) & 0xFFFF)
+                        + (nTbS - 1 - y) * (p.get(x, -1) & 0xFFFF) + (y + 1) * (p.get(-1, nTbS) & 0xFFFF)
+                        + nTbS) >> tbsShift;
+            }
+        }
 
         return predSamples;
     }
+
+    private int[][] decodeIntraPredictionDcBuffer;
 
     // 8.4.4.2.5 Specification of intra prediction mode INTRA_DC
     private int[][] decodeIntraPredictionDc(HeicPicture picture, int nTbS, int cIdx, NeighbouringSamples p)
@@ -450,35 +486,51 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         }
         dcVal >>= (MathUtils.f64_s32(MathUtils.log(nTbS, 2)) + 1);
 
-        int[][] predSamples = new int[nTbS][nTbS];
+        if (decodeIntraPredictionDcBuffer == null)
+        {
+            decodeIntraPredictionDcBuffer = new int[nTbS][nTbS];
+        }
+
+        int[][] predSamples = decodeIntraPredictionDcBuffer;
 
         if (cIdx == 0 && nTbS < 32)
         {
-            predSamples[0][0] = ((p.get(-1, 0) & 0xFFFF) + 2 * dcVal + (p.get(0, -1) & 0xFFFF) + 2) >> 2;
+            int[] predSample0 = predSamples[0];
+            predSample0[0] = ((p.get(-1, 0) & 0xFFFF) + 2 * dcVal + (p.get(0, -1) & 0xFFFF) + 2) >> 2;
 
             for (int x = 1; x < nTbS; x++)
                 predSamples[x][0] = ((p.get(x, -1) & 0xFFFF) + 3 * dcVal + 2) >> 2;
 
             for (int y = 1; y < nTbS; y++)
-                predSamples[0][y] = ((p.get(-1, y) & 0xFFFF) + 3 * dcVal + 2) >> 2;
+                predSample0[y] = ((p.get(-1, y) & 0xFFFF) + 3 * dcVal + 2) >> 2;
 
-            for (int y = 1; y < nTbS; y++)
-                for (int x = 1; x < nTbS; x++)
-                    predSamples[x][y] = dcVal;
+            for (int x = 1; x < nTbS; x++)
+            {
+                int[] predSampleX = predSamples[x];
+                Arrays.fill(predSampleX, 1, nTbS, dcVal);
+//                for (int y = 1; y < nTbS; y++)
+//                {
+//                    predSampleX[y] = dcVal;
+//                }
+            }
         }
         else
         {
-            for (int y = 0; y < nTbS; y++)
+            for (int x = 0; x < nTbS; x++)
             {
-                for (int x = 0; x < nTbS; x++)
-                {
-                    predSamples[x][y] = dcVal;
-                }
+                int[] predSampleX = predSamples[x];
+                Arrays.fill(predSampleX, 0, nTbS, dcVal);
+//                for (int y = 0; y < nTbS; y++)
+//                {
+//                    predSampleX[y] = dcVal;
+//                }
             }
         }
 
         return predSamples;
     }
+
+    private int[] decodeIntraPredictionAngularBuffer;
 
     // 8.4.4.2.6 Specification of intra prediction mode INTRA_ANGULAR
     private int[][] decodeIntraPredictionAngular(BitStreamWithNalSupport stream, HeicPicture picture,
@@ -505,7 +557,12 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
             disableIntraBoundaryFilter = true;
         }
 
-        int[] reference = new int[3 * nTbS + 1];
+        if (decodeIntraPredictionAngularBuffer == null)
+        {
+            decodeIntraPredictionAngularBuffer = new int[3 * nTbS + 1];
+        }
+
+        int[] reference = decodeIntraPredictionAngularBuffer;
 
         if (intraPredMode.ordinal() >= 18)
         {
@@ -530,6 +587,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
             for (int x = 0; x < nTbS; x++)
             {
+                int[] predSampleX = predSamples[x];
                 for (int y = 0; y < nTbS; y++)
                 {
                     int iIdx = ((y + 1) * intraPredAngle) >> 5;
@@ -537,24 +595,27 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                     if (iFact != 0)
                     {
-                        predSamples[x][y] =
+                        predSampleX[y] =
                                 ((32 - iFact) * reference[x + nTbS + iIdx + 1] +
                                         iFact * reference[x + nTbS + iIdx + 2] + 16) >> 5;
                     }
                     else
                     {
-                        predSamples[x][y] = reference[x + nTbS + iIdx + 1];
+                        predSampleX[y] = reference[x + nTbS + iIdx + 1];
                     }
                 }
             }
 
             if (intraPredMode.ordinal() == 26 && cIdx == 0 && nTbS < 32 && !disableIntraBoundaryFilter)
             {
+                int bitDepthY = picture.sps.getBitDepthY() & 0xFF;
+                int[] predSample0 = predSamples[0];
                 for (int y = 0; y < nTbS; y++)
-                    predSamples[0][y] =
+                {
+                    predSample0[y] =
                             MathExtra.clipBitDepth((p.get(0, -1) & 0xFFFF)
-                                            + (((p.get(-1, y) & 0xFFFF) - (p.get(-1, -1) & 0xFFFF)) >> 1),
-                                    picture.sps.getBitDepthY() & 0xFF);
+                                            + (((p.get(-1, y) & 0xFFFF) - (p.get(-1, -1) & 0xFFFF)) >> 1), bitDepthY);
+                }
             }
         }
         else
@@ -580,6 +641,7 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
             for (int x = 0; x < nTbS; x++)
             {
+                int[] predSampleX = predSamples[x];
                 for (int y = 0; y < nTbS; y++)
                 {
                     int iIdx = ((x + 1) * intraPredAngle) >> 5;
@@ -587,13 +649,13 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
                     if (iFact != 0)
                     {
-                        predSamples[x][y] =
+                        predSampleX[y] =
                                 ((32 - iFact) * reference[y + nTbS + iIdx + 1] +
                                         iFact * reference[y + nTbS + iIdx + 2] + 16) >> 5;
                     }
                     else
                     {
-                        predSamples[x][y] = reference[y + nTbS + iIdx + 1];
+                        predSampleX[y] = reference[y + nTbS + iIdx + 1];
                     }
                 }
             }
@@ -609,6 +671,8 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
         return predSamples;
     }
+
+    private int[][] scalingAndTransformationBuffer;
 
     // 8.6.2 Scaling and transformation process
     private int[][] scalingAndTransformation(BitStreamWithNalSupport stream, HeicPicture picture,
@@ -632,15 +696,27 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
                 nTbS == 4 &&
                 cuPredMode == PredMode.MODE_INTRA);
 
-        int[][] rotateSamples = new int[nTbS][nTbS];
+        if (scalingAndTransformationBuffer == null)
+        {
+            scalingAndTransformationBuffer = new int[nTbS][nTbS];
+        }
 
-        if (stream.getContext().cu_transquant_bypass_flag)
+        int[][] rotateSamples = scalingAndTransformationBuffer;
+
+        DecoderContext streamContext = stream.getContext();
+        if (streamContext.cu_transquant_bypass_flag)
         {
             if (rotateCoeffs)
             {
                 for (int x = 0; x < nTbS; x++)
+                {
+                    int[] rotateSampleX = rotateSamples[x];
+                    int[] transCoefLevel = picture.TransCoeffLevel[cIdx][xTbY + nTbS - x - 1];
                     for (int y = 0; y < nTbS; y++)
-                        rotateSamples[x][y] = picture.TransCoeffLevel[cIdx][xTbY + nTbS - x - 1][yTbY + nTbS - y - 1];
+                    {
+                        rotateSampleX[y] = transCoefLevel[yTbY + nTbS - y - 1];
+                    }
+                }
             }
             else
             {
@@ -655,14 +731,14 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
             switch (cIdx)
             {
                 case 1:
-                    qP = stream.getContext().getQpCb();
+                    qP = streamContext.getQpCb();
                     break;
                 case 2:
-                    qP = stream.getContext().getQpCr();
+                    qP = streamContext.getQpCr();
                     break;
                 case 0:
                 default:
-                    qP = MathExtra.clip3(0, 51 + (picture.sps.getQpBdOffsetY() & 0xFF), stream.getContext().getQpY() +
+                    qP = MathExtra.clip3(0, 51 + (picture.sps.getQpBdOffsetY() & 0xFF), streamContext.getQpY() +
                             (picture.tu_residual_act_flag[xTbY][yTbY] ? picture.pps.getPpsActQpOffsetY() + slice_header.slice_act_y_qp_offset : 0));
                     break;
 
@@ -670,11 +746,18 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
             int[][] d = getScalingProcessForTransformCoefficients(stream, picture, xTbY, yTbY, cuPredMode, cIdx, nTbS, qP);
 
-            if (stream.getContext().transform_skip_flag[cIdx])
+            if (streamContext.transform_skip_flag[cIdx])
             {
                 for (int x = 0; x < nTbS; x++)
+                {
+                    int[] rotateSampleX = rotateSamples[x];
+                    int[] dnTbsX = d[nTbS - x - 1];
+                    int[] dX = d[x];
                     for (int y = 0; y < nTbS; y++)
-                        rotateSamples[x][y] = (rotateCoeffs ? d[nTbS - x - 1][nTbS - y - 1] : d[x][y]) << tsShift;
+                    {
+                        rotateSampleX[y] = (rotateCoeffs ? dnTbsX[nTbS - y - 1] : dX[y]) << tsShift;
+                    }
+                }
             }
             else
             {
@@ -684,11 +767,19 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
             int offset = 1 << (bdShift - 1);
 
             for (int x = 0; x < nTbS; x++)
+            {
+                int[] rotateSampleX = rotateSamples[x];
                 for (int y = 0; y < nTbS; y++)
-                    rotateSamples[x][y] = (rotateSamples[x][y] + offset) >> bdShift;
+                {
+                    rotateSampleX[y] = (rotateSampleX[y] + offset) >> bdShift;
+                }
+            }
         }
         return rotateSamples;
     }
+
+    private int[][] scalingProcessForTransformCoefficientsM;
+    private int[][] scalingProcessForTransformCoefficientsD;
 
     // 8.6.3 Scaling process for transform coefficients
     private int[][] getScalingProcessForTransformCoefficients(BitStreamWithNalSupport stream, HeicPicture picture,
@@ -714,36 +805,56 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         int sizeId = MathUtils.f64_s32(MathUtils.log(nTbS, 2)) - 2;
         int matrixId = cIdx + (cuPredMode == PredMode.MODE_INTRA ? 0 : 3);
 
-        int[][] m = new int[nTbS][nTbS];
-        int[][] d = new int[nTbS][nTbS];
+        if (scalingProcessForTransformCoefficientsM == null)
+        {
+            scalingProcessForTransformCoefficientsM = new int[nTbS][nTbS];
+        }
+
+        if (scalingProcessForTransformCoefficientsD == null)
+        {
+            scalingProcessForTransformCoefficientsD = new int[nTbS][nTbS];
+        }
+
+        int[][] m = scalingProcessForTransformCoefficientsM;
+        int[][] d = scalingProcessForTransformCoefficientsD;
 
         int coeff;
 
+        DecoderContext streamContext = stream.getContext();
+        int[][] scalingFactorSizeIdMatrixID = Scaling.getScalingFactor()[sizeId][matrixId];
+        int bgShiftMask = 1 << (bdShift - 1);
         for (int x = 0; x < nTbS; x++)
         {
+            int[] transCoefLevelX = picture.TransCoeffLevel[cIdx][xTbY + x];
+            int[] mX = m[x];
+            int[] scalingFactorSizeIdMatrixIdX = scalingFactorSizeIdMatrixID[x];
+            int[] dX = d[x];
             for (int y = 0; y < nTbS; y++)
             {
-                coeff = picture.TransCoeffLevel[cIdx][xTbY + x][yTbY + y];
+                coeff = transCoefLevelX[yTbY + y];
 
                 if (!picture.sps.scaling_list_enabled_flag ||
-                        (stream.getContext().transform_skip_flag[cIdx] && nTbS > 4))
+                        (streamContext.transform_skip_flag[cIdx] && nTbS > 4))
                 {
-                    m[x][y] = 16;
+                    mX[y] = 16;
                 }
                 else
                 {
-                    m[x][y] = Scaling.getScalingFactor()[sizeId][matrixId][x][y];
+                    mX[y] = scalingFactorSizeIdMatrixIdX[y];
                 }
 
-
-                d[x][y] = MathExtra.clip3(coeffMin, coeffMax,
-                        ((coeff * m[x][y] *
-                                levelScale[qP % 6] << (qP / 6)) + (1 << (bdShift - 1))) >> bdShift);
+                dX[y] = MathExtra.clip3(coeffMin, coeffMax,
+                        ((coeff * mX[y] *
+                                levelScale[qP % 6] << (qP / 6)) + bgShiftMask) >> bdShift);
             }
         }
 
         return d;
     }
+
+    private int[][] transformationOfScaledCoefficientsE;
+    private int[][] transformationOfScaledCoefficientsG;
+    private int[][] transformationOfScaledCoefficientsR;
 
     // 8.6.4 Transformation process for scaled transform coefficients
     private int[][] transformationOfScaledCoefficients(BitStreamWithNalSupport stream, HeicPicture picture,
@@ -763,43 +874,108 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
         int trType = (cuPredMode == PredMode.MODE_INTRA && nTbS == 4 && cIdx == 0) ? 1 : 0;
         int mult = 1 << (5 - MathUtils.f64_s32(MathUtils.log(nTbS, 2)));
 
-        int[][] e = new int[nTbS][nTbS];
-        int[][] g = new int[nTbS][nTbS];
-        int[][] r = new int[nTbS][nTbS];
+        if (transformationOfScaledCoefficientsE == null)
+        {
+            transformationOfScaledCoefficientsE = new int[nTbS][nTbS];
+        }
+        else
+        {
+            for (int[] ints : transformationOfScaledCoefficientsE)
+            {
+                Arrays.fill(ints, (byte)0);
+            }
+        }
+
+        if (transformationOfScaledCoefficientsG == null)
+        {
+            transformationOfScaledCoefficientsG = new int[nTbS][nTbS];
+        }
+        else
+        {
+            for (int[] ints : transformationOfScaledCoefficientsG)
+            {
+                Arrays.fill(ints, (byte)0);
+            }
+        }
+
+        if (transformationOfScaledCoefficientsR == null)
+        {
+            transformationOfScaledCoefficientsR = new int[nTbS][nTbS];
+        }
+        else
+        {
+            for (int[] ints : transformationOfScaledCoefficientsR)
+            {
+                Arrays.fill(ints, (byte)0);
+            }
+        }
+
+        int[][] e = transformationOfScaledCoefficientsE;
+        int[][] g = transformationOfScaledCoefficientsG;
+        int[][] r = transformationOfScaledCoefficientsR;
 
         for (int x = 0; x < nTbS; x++)
         {
+            int[] eX = e[x];
+            int[] dX = d[x];
             if (trType == 1)
             {
-                for (int i = 0; i < nTbS; i++)
-                    for (int j = 0; j < nTbS; j++)
-                        e[x][i] += transMatrix4x4[j][i] * d[x][j];
+                for (int j = 0; j < nTbS; j++)
+                {
+                    for (int i = 0; i < nTbS; i++)
+                    {
+                        int[] transMatrix4x4J = transMatrix4x4[j];
+                        eX[i] += transMatrix4x4J[i] * dX[j];
+                    }
+                }
             }
             else
             {
-                for (int i = 0; i < nTbS; i++)
-                    for (int j = 0; j < nTbS; j++)
-                        e[x][i] += transMatrix32x32[j * mult][i] * d[x][j];
+                for (int j = 0; j < nTbS; j++)
+                {
+                    int[] transMatrix32x32Jmult = transMatrix32x32[j * mult];
+                    int dXj = dX[j];
+                    for (int i = 0; i < nTbS; i++)
+                    {
+                        eX[i] += transMatrix32x32Jmult[i] * dXj;
+                    }
+                }
             }
         }
 
         for (int x = 0; x < nTbS; x++)
+        {
+            int[] eX = e[x];
+            int[] gX = g[x];
             for (int y = 0; y < nTbS; y++)
-                g[x][y] = MathExtra.clip3(coeffMin, coeffMax, (e[x][y] + 64) >> 7);
+            {
+                gX[y] = MathExtra.clip3(coeffMin, coeffMax, (eX[y] + 64) >> 7);
+            }
+        }
 
         for (int y = 0; y < nTbS; y++)
         {
             if (trType == 1)
             {
                 for (int i = 0; i < nTbS; i++)
+                {
+                    int[] rI = r[i];
                     for (int j = 0; j < nTbS; j++)
-                        r[i][y] += transMatrix4x4[j][i] * g[j][y];
+                    {
+                        rI[y] += transMatrix4x4[j][i] * g[j][y];
+                    }
+                }
             }
             else
             {
                 for (int i = 0; i < nTbS; i++)
+                {
+                    int[] rI = r[i];
                     for (int j = 0; j < nTbS; j++)
-                        r[i][y] += transMatrix32x32[j * mult][i] * g[j][y];
+                    {
+                        rI[y] += transMatrix32x32[j * mult][i] * g[j][y];
+                    }
+                }
             }
         }
 

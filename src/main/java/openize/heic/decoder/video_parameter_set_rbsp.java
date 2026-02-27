@@ -25,14 +25,14 @@ public class video_parameter_set_rbsp extends NalUnit
 
     final boolean vps_sub_layer_ordering_info_present_flag;
 
-    final /*UInt32*/ long[] vps_max_dec_pic_buffering_minus1;
-    final /*UInt32*/ long[] vps_max_num_reorder_pics;
-    final /*UInt32*/ long[] vps_max_latency_increase_plus1;
+//    final /*UInt32*/ long[] vps_max_dec_pic_buffering_minus1;
+//    final /*UInt32*/ long[] vps_max_num_reorder_pics;
+//    final /*UInt32*/ long[] vps_max_latency_increase_plus1;
 
     final byte vps_max_layer_id;
     final /*UInt32*/ long vps_num_layer_sets_minus1;
 
-    final boolean[][] layer_id_included_flag;
+    //final boolean[][] layer_id_included_flag;
     final boolean vps_timing_info_present_flag;
     /*UInt32*/ long vps_num_units_in_tick;
     /*UInt32*/ long vps_time_scale;
@@ -40,7 +40,7 @@ public class video_parameter_set_rbsp extends NalUnit
     /*UInt32*/ long vps_num_ticks_poc_diff_one;
     /*UInt32*/ long vps_num_hrd_parameters;
 
-    /*UInt32*/ long[] hrd_layer_set_idx;
+    ///*UInt32*/ long[] hrd_layer_set_idx;
     boolean[] cprms_present_flag;
     final boolean vps_extension_flag;
     boolean vps_extension_data_flag;
@@ -64,25 +64,25 @@ public class video_parameter_set_rbsp extends NalUnit
 
 
         byte layers_count = (byte) (vps_sub_layer_ordering_info_present_flag ? 0 : vps_max_layers_minus1);
-        vps_max_dec_pic_buffering_minus1 = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
-        vps_max_num_reorder_pics = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
-        vps_max_latency_increase_plus1 = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
+//        vps_max_dec_pic_buffering_minus1 = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
+//        vps_max_num_reorder_pics = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
+//        vps_max_latency_increase_plus1 = new /*UInt32*/long[(vps_max_layers_minus1 & 0xFF) + 1];
 
         for (int i = layers_count & 0xFF; i <= (vps_max_layers_minus1 & 0xFF); i++)
         {
-            vps_max_dec_pic_buffering_minus1[i] = stream.readUev();        // ue(v)
-            vps_max_num_reorder_pics[i] = stream.readUev();                // ue(v)
-            vps_max_latency_increase_plus1[i] = stream.readUev();          // ue(v)
+            /*vps_max_dec_pic_buffering_minus1[i] =*/ stream.readUev();        // ue(v)
+            /*vps_max_num_reorder_pics[i] =*/ stream.readUev();                // ue(v)
+            /*vps_max_latency_increase_plus1[i] =*/ stream.readUev();          // ue(v)
         }
 
         vps_max_layer_id = (byte) stream.read(6);                       // u(6)
         vps_num_layer_sets_minus1 = stream.readUev();                // ue(v)
 
-        layer_id_included_flag = new boolean[(int) (((vps_num_layer_sets_minus1 & 0xFFFFFFFFL) + 2) & 0xFFFFFFFFL)][(vps_max_layer_id & 0xFF) + 1];
+        //layer_id_included_flag = new boolean[(int) (((vps_num_layer_sets_minus1 & 0xFFFFFFFFL) + 2) & 0xFFFFFFFFL)][(vps_max_layer_id & 0xFF) + 1];
 
-        for (int i = 1; i <= (vps_num_layer_sets_minus1 & 0xFFFFFFFFL); i++)
-            for (int j = 0; j <= (vps_max_layer_id & 0xFF); j++)
-                layer_id_included_flag[i][j] = stream.readFlag();    // u(1)
+//        for (int i = 1; i <= (vps_num_layer_sets_minus1 & 0xFFFFFFFFL); i++)
+//            for (int j = 0; j <= (vps_max_layer_id & 0xFF); j++)
+//                layer_id_included_flag[i][j] = stream.readFlag();    // u(1)
 
         vps_timing_info_present_flag = stream.readFlag();            // u(1)
 
@@ -97,11 +97,11 @@ public class video_parameter_set_rbsp extends NalUnit
             }
 
             vps_num_hrd_parameters = (stream.readUev());                   // ue(v)
-            hrd_layer_set_idx = new /*UInt32*/long[(int) (vps_num_hrd_parameters & 0xFFFFFFFFL)];
+            //hrd_layer_set_idx = new /*UInt32*/long[(int) (vps_num_hrd_parameters & 0xFFFFFFFFL)];
             cprms_present_flag = new boolean[(int) (vps_num_hrd_parameters & 0xFFFFFFFFL)];
             for (int i = 0; i < (vps_num_hrd_parameters & 0xFFFFFFFFL); i++)
             {
-                hrd_layer_set_idx[i] = stream.readUev();                   // ue(v)
+                /*hrd_layer_set_idx[i] =*/ stream.readUev();                   // ue(v)
                 if (i > 0)
                 {
                     cprms_present_flag[i] = stream.readFlag();       // u(1)

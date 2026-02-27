@@ -23,21 +23,21 @@ public class slice_segment_header
     boolean no_output_of_prior_pics_flag;
     final byte slice_pic_parameter_set_id;
     boolean dependent_slice_segment_flag;
-    /*UInt32*/ long slice_segment_address;
-    final boolean[] slice_reserved_flag;
+    /*UInt32*/ int slice_segment_address;
+    //final boolean[] slice_reserved_flag;
     SliceType slice_type;
     boolean pic_output_flag;
-     byte colour_plane_id;
+    byte colour_plane_id;
     int slice_pic_order_cnt_lsb;
     boolean short_term_ref_pic_set_sps_flag;
     int short_term_ref_pic_set_idx;
-    /*UInt32*/ long num_long_term_sps;
-    /*UInt32*/ long num_long_term_pics;
+    /*UInt32*/ int num_long_term_sps;
+    /*UInt32*/ int num_long_term_pics;
     boolean[] used_by_curr_pic_lt_flag;
-    /*UInt32*/ long[] lt_idx_sps;
+    /*UInt32*/ int[] lt_idx_sps;
     int[] poc_lsb_lt;
     boolean[] delta_poc_msb_present_flag;
-    /*UInt32*/ long[] delta_poc_msb_cycle_lt;
+    // /*UInt32*/ long[] delta_poc_msb_cycle_lt;
     boolean slice_temporal_mvp_enabled_flag;
     boolean slice_sao_luma_flag;
     boolean slice_sao_chroma_flag;
@@ -48,7 +48,7 @@ public class slice_segment_header
     /*UInt32*/ long collocated_ref_idx;
     boolean cabac_init_flag;
     boolean mvd_l1_zero_flag;
-     byte five_minus_max_num_merge_cand;
+    byte five_minus_max_num_merge_cand;
     boolean use_integer_mv_flag;
     int slice_qp_delta;
     int slice_cb_qp_offset;
@@ -64,12 +64,12 @@ public class slice_segment_header
     boolean slice_loop_filter_across_slices_enabled_flag;
     /*UInt32*/ long num_entry_point_offsets;
     int offset_len_minus1;
-    int[] entry_point_offset_minus1;
-    /*UInt32*/ long slice_segment_header_extension_length;
-     byte[] slice_segment_header_extension_data_byte;
-    ref_pic_lists_modification ref_pic_lists_modification;
+    //int[] entry_point_offset_minus1;
+    /*UInt32*/ int slice_segment_header_extension_length;
+    //byte[] slice_segment_header_extension_data_byte;
+    //ref_pic_lists_modification ref_pic_lists_modification;
     //public int CurrRpsIdx;
-    pred_weight_table pred_weight_table;
+    //pred_weight_table pred_weight_table;
     private /*UInt32*/ long ctbAddrInRs;
     private /*UInt32*/ long ctbAddrInTs;
 
@@ -96,19 +96,19 @@ public class slice_segment_header
                 dependent_slice_segment_flag = stream.readFlag();
             }
 
-            slice_segment_address = stream.read(
-                    MathUtils.f64_s32(MathUtils.ceiling(MathUtils.log(sps.getPicSizeInCtbsY() & 0xFFFFFFFFL, 2)))) & 0xFFFFFFFFL;
+            slice_segment_address = (int) (stream.read(
+                                MathUtils.f64_s32(MathUtils.ceiling(MathUtils.log(sps.getPicSizeInCtbsY() & 0xFFFFFFFFL, 2)))) & 0xFFFFFFFFL);
 
             setCtbAddrInRs(slice_segment_address);
             setCtbAddrInTs(pps.CtbAddrRsToTs[(int) (getCtbAddrInRs())]);
         }
 
         //int CuQpDeltaVal = 0;
-        slice_reserved_flag = new boolean[pps.num_extra_slice_header_bits];
+        //slice_reserved_flag = new boolean[pps.num_extra_slice_header_bits];
         if (!dependent_slice_segment_flag)
         {
             for (int i = 0; i < (pps.num_extra_slice_header_bits & 0xFF); i++)
-                slice_reserved_flag[i] = stream.readFlag();
+                /*slice_reserved_flag[i] =*/ stream.readFlag();
 
             slice_type = SliceType.get(stream.readUev());
 
@@ -152,25 +152,25 @@ public class slice_segment_header
                 {
                     if ((sps.num_long_term_ref_pics_sps & 0xFFFFFFFFL) > 0)
                     {
-                        num_long_term_sps = stream.readUev();
+                        num_long_term_sps = (int) stream.readUev();
                     }
-                    num_long_term_pics = stream.readUev();
+                    num_long_term_pics = (int) stream.readUev();
 
                     /*UInt32*/
-                    long num_long_term_sum = ((num_long_term_sps & 0xFFFFFFFFL) + (num_long_term_pics & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+                    int num_long_term_sum = num_long_term_sps + num_long_term_pics;
                     used_by_curr_pic_lt_flag = new boolean[(int) (num_long_term_sum & 0xFFFFFFFFL)];
-                    lt_idx_sps = new /*UInt32*/long[(int) (num_long_term_sum & 0xFFFFFFFFL)];
+                    lt_idx_sps = new /*UInt32*/int[(int) (num_long_term_sum & 0xFFFFFFFFL)];
                     poc_lsb_lt = new int[(int) (num_long_term_sum & 0xFFFFFFFFL)];
                     delta_poc_msb_present_flag = new boolean[(int) (num_long_term_sum & 0xFFFFFFFFL)];
-                    delta_poc_msb_cycle_lt = new /*UInt32*/long[(int) (num_long_term_sum & 0xFFFFFFFFL)];
+                    // delta_poc_msb_cycle_lt = new /*UInt32*/long[(int) (num_long_term_sum & 0xFFFFFFFFL)];
 
-                    for (int i = 0; i < (((num_long_term_sps & 0xFFFFFFFFL) + (num_long_term_pics & 0xFFFFFFFFL)) & 0xFFFFFFFFL); i++)
+                    for (int i = 0; i < ((num_long_term_sps + num_long_term_pics) & 0xFFFFFFFFL); i++)
                     {
                         if (i < (num_long_term_sps & 0xFFFFFFFFL))
                         {
                             if ((sps.num_long_term_ref_pics_sps & 0xFFFFFFFFL) > 1)
                             {
-                                lt_idx_sps[i] = stream.readUev();
+                                lt_idx_sps[i] = (int)stream.readUev();
                             }
                         }
                         else
@@ -186,7 +186,7 @@ public class slice_segment_header
 
                         if (delta_poc_msb_present_flag[i])
                         {
-                            delta_poc_msb_cycle_lt[i] = stream.readUev();
+                            /*delta_poc_msb_cycle_lt[i] =*/ stream.readUev();
                         }
                     }
                 }
@@ -220,7 +220,7 @@ public class slice_segment_header
 
                 if (pps.lists_modification_present_flag && (getNumPicTotalCurr() & 0xFFFFFFFFL) > 1)
                 {
-                    ref_pic_lists_modification = new ref_pic_lists_modification(
+                    /*ref_pic_lists_modification =*/ new ref_pic_lists_modification(
                             stream, slice_type,
                             num_ref_idx_l0_active_minus1,
                             num_ref_idx_l1_active_minus1,
@@ -252,7 +252,7 @@ public class slice_segment_header
                 if ((pps.weighted_pred_flag && slice_type == SliceType.P) ||
                         (pps.weighted_bipred_flag && slice_type == SliceType.B))
                 {
-                    pred_weight_table = new pred_weight_table(
+                    /*pred_weight_table =*/ new pred_weight_table(
                             stream, this);
                 }
 
@@ -313,21 +313,19 @@ public class slice_segment_header
             if ((num_entry_point_offsets & 0xFFFFFFFFL) > 0)
             {
                 offset_len_minus1 = (byte) stream.readUev() & 0xFF;
-                entry_point_offset_minus1 = new int[(int) (num_entry_point_offsets & 0xFFFFFFFFL)];
+                //entry_point_offset_minus1 = new int[(int) (num_entry_point_offsets & 0xFFFFFFFFL)];
                 for (int i = 0; i < (num_entry_point_offsets & 0xFFFFFFFFL); i++)
-                    entry_point_offset_minus1[i]
-                            = stream.read(offset_len_minus1 + 1);
+                    /*entry_point_offset_minus1[i] =*/ stream.read(offset_len_minus1 + 1);
                 //entry_point_offset_minus1[i+1] += entry_point_offset_minus1[i]
             }
         }
         if (pps.slice_segment_header_extension_present_flag)
         {
-            slice_segment_header_extension_length = stream.readUev();
-            slice_segment_header_extension_data_byte =
-                    new byte[(int) (slice_segment_header_extension_length & 0xFFFFFFFFL)];
-            for (int i = 0; i < (slice_segment_header_extension_length & 0xFFFFFFFFL); i++)
-                slice_segment_header_extension_data_byte[i]
-                        = (byte) stream.read(8);
+            slice_segment_header_extension_length = (int) stream.readUev();
+//            slice_segment_header_extension_data_byte =
+//                    new byte[slice_segment_header_extension_length];
+            for (int i = 0; i < slice_segment_header_extension_length; i++)
+                /*slice_segment_header_extension_data_byte[i] = (byte)*/ stream.read(8);
         }
 
         stream.read(1);             /* equal to 1; alignment_bit_equal_to_one */
@@ -340,7 +338,7 @@ public class slice_segment_header
         return 5 - (five_minus_max_num_merge_cand & 0xFF);
     }
 
-    public final int getinitType()
+    public final int getInitType()
     {
         switch (slice_type)
         {
@@ -383,7 +381,7 @@ public class slice_segment_header
     {
         return !dependent_slice_segment_flag ?
                 slice_segment_address : // if not dependent slice
-                pps.CtbAddrTsToRs[(int) (((pps.CtbAddrRsToTs[(int) (slice_segment_address)] & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL)];
+                pps.CtbAddrTsToRs[(int) ((pps.CtbAddrRsToTs[slice_segment_address] - 1) & 0xFFFFFFFFL)];
     }// else take preceding slice segment
 
     final /*UInt32*/long getCurrRpsIdx()
@@ -427,7 +425,7 @@ public class slice_segment_header
     public final int pocLsbLt(int i)
     {
         return (i < (num_long_term_sps & 0xFFFFFFFFL)) ?
-                pps.sps.lt_ref_pic_poc_lsb_sps[(int) (lt_idx_sps[i])] :
+                pps.sps.lt_ref_pic_poc_lsb_sps[lt_idx_sps[i]] :
                 poc_lsb_lt[i];
     }
 
@@ -435,7 +433,7 @@ public class slice_segment_header
     public final boolean usedByCurrPicLt(int i)
     {
         return (i < (num_long_term_sps & 0xFFFFFFFFL)) ?
-                pps.sps.used_by_curr_pic_lt_sps_flag[(int) (lt_idx_sps[i])] :
+                pps.sps.used_by_curr_pic_lt_sps_flag[lt_idx_sps[i]] :
                 used_by_curr_pic_lt_flag[i];
     }
 }

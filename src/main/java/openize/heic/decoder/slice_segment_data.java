@@ -12,13 +12,14 @@ package openize.heic.decoder;
 
 import openize.heic.decoder.io.BitStreamWithNalSupport;
 
+import java.io.InvalidObjectException;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public class slice_segment_data
 {
-    private final List<coding_tree_unit> CTUs = new ArrayList<>(15);
+    //private final List<coding_tree_unit> CTUs = new ArrayList<>(15);
 
     public slice_segment_data(
             BitStreamWithNalSupport stream,
@@ -50,7 +51,7 @@ public class slice_segment_data
             }
 
             coding_tree_unit ctu = new coding_tree_unit(stream, header);
-            CTUs.add(ctu);
+            //CTUs.add(ctu);
 
             if (header.pps.entropy_coding_sync_enabled_flag &&
                     xCtu == 1 &&
@@ -82,6 +83,9 @@ public class slice_segment_data
                                             (header.pps.TileId[(int) (header.getCtbAddrInTs())] & 0xFFFFFFFFL) != (header.pps.TileId[(int) (header.pps.CtbAddrRsToTs[(int) (((header.getCtbAddrInRs() & 0xFFFFFFFFL) - 1) & 0xFFFFFFFFL)])] & 0xFFFFFFFFL)))))
             {
                 int one = stream.getCabac().read_end_of_subset_one_bit(); /* equal to 1; */
+
+                if (one != 1)
+                    throw new IllegalStateException("Unexpected slice-end bit!");
 
                 while (stream.notByteAligned())
                     stream.skipBits(1);

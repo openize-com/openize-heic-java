@@ -115,13 +115,13 @@ class YuvConverter
                 {
                     if (highColorRange)
                     {
-                        Cb = (picture.rawPixelsHighColorRange[1][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
-                        Cr = (picture.rawPixelsHighColorRange[2][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFFFF) - chromaHalfRange;
+                        Cb = (picture.rawPixelsHighColorRange[1][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
+                        Cr = (picture.rawPixelsHighColorRange[2][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFFFF) - chromaHalfRange;
                     }
                     else
                     {
-                        Cb = (picture.rawPixels[1][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFF) - chromaHalfRange;
-                        Cr = (picture.rawPixels[2][col / (picture.hvcConfig.getSPS().getSubWidthC() & 0xFF)][row / (picture.hvcConfig.getSPS().getSubHeightC() & 0xFF)] & 0xFF) - chromaHalfRange;
+                        Cb = (picture.rawPixels[1][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFF) - chromaHalfRange;
+                        Cr = (picture.rawPixels[2][col / configSpsSubWidthC][row / configSpsSubHeightC] & 0xFF) - chromaHalfRange;
                     }
 
                     if (!fullRangeFlag)

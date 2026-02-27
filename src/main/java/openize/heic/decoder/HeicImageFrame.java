@@ -785,24 +785,25 @@ public class HeicImageFrame
         {
             for (/*UInt32*/long col = 0; col < width; col++)
             {
-                r = rgba[(int) (col)][(int) (row)][0];
-                g = rgba[(int) (col)][(int) (row)][1];
-                b = rgba[(int) (col)][(int) (row)][2];
-                a = rgba[(int) (col)][(int) (row)][3];
+                byte[] bytesPtr = rgba[(int) (col)][(int) (row)];
+                r = bytesPtr[0];
+                g = bytesPtr[1];
+                b = bytesPtr[2];
+                a = bytesPtr[3];
 
                 switch (pixelFormat)
                 {
                     case Argb32:
-                        rgba[(int) (col)][(int) (row)][0] = a;
-                        rgba[(int) (col)][(int) (row)][1] = r;
-                        rgba[(int) (col)][(int) (row)][2] = g;
-                        rgba[(int) (col)][(int) (row)][3] = b;
+                        bytesPtr[0] = a;
+                        bytesPtr[1] = r;
+                        bytesPtr[2] = g;
+                        bytesPtr[3] = b;
                         break;
                     case Bgra32:
-                        rgba[(int) (col)][(int) (row)][0] = b;
-                        rgba[(int) (col)][(int) (row)][1] = g;
-                        rgba[(int) (col)][(int) (row)][2] = r;
-                        rgba[(int) (col)][(int) (row)][3] = a;
+                        bytesPtr[0] = b;
+                        //bytesPtr[1] = g;
+                        bytesPtr[2] = r;
+                        //bytesPtr[3] = a;
                         break;
                 }
             }

@@ -16,6 +16,38 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 public class pic_parameter_set_rbsp extends NalUnit
 {
     public final seq_parameter_set_rbsp sps;
+    final byte pps_pic_parameter_set_id; // max - 64
+    final byte pps_seq_parameter_set_id;
+    final boolean dependent_slice_segments_enabled_flag;
+    final boolean output_flag_present_flag;
+    final byte num_extra_slice_header_bits;
+    final boolean sign_data_hiding_enabled_flag;
+    final boolean cabac_init_present_flag;
+    final /*UInt32*/ long num_ref_idx_l0_default_active_minus1;
+    final /*UInt32*/ long num_ref_idx_l1_default_active_minus1;
+    final int init_qp_minus26;
+    final boolean constrained_intra_pred_flag;
+    final boolean transform_skip_enabled_flag;
+    final boolean cu_qp_delta_enabled_flag;
+    final int pps_cb_qp_offset;
+    final int pps_cr_qp_offset;
+    final boolean pps_slice_chroma_qp_offsets_present_flag;
+    final boolean weighted_pred_flag;
+    final boolean weighted_bipred_flag;
+    final boolean transquant_bypass_enabled_flag;
+    final boolean tiles_enabled_flag;
+    final boolean entropy_coding_sync_enabled_flag;
+    final boolean pps_loop_filter_across_slices_enabled_flag;
+    final boolean deblocking_filter_control_present_flag;
+    final boolean pps_scaling_list_data_present_flag;
+    final boolean lists_modification_present_flag;
+    final /*UInt32*/ long log2_parallel_merge_level_minus2;
+    final boolean slice_segment_header_extension_present_flag;
+    final boolean pps_extension_present_flag;
+    final pps_scc_extension pps_scc_ext;
+    //pps_3d_extension pps_3d_ext;
+    //pps_multilayer_extension pps_multilayer_ext;
+    final pps_range_extension pps_range_ext;
     // the width of the i-th tile column in units of CTBs
     public /*UInt32*/ long[] colWidth;
     // the height of the j-th tile row in units of CTBs
@@ -33,61 +65,29 @@ public class pic_parameter_set_rbsp extends NalUnit
     // the conversion from a CTB address in CTB raster scan to a tile ID
     public /*UInt32*/ long[] TileIdFromRs;
     // the width of the i-th tile column in units of luma samples
-    public /*UInt32*/ long[] ColumnWidthInLumaSamples;
+//    public /*UInt32*/ long[] ColumnWidthInLumaSamples;
     // the height of the j-th tile row in units of luma samples
-    public /*UInt32*/ long[] RowHeightInLumaSamples;
+    //  public /*UInt32*/ long[] RowHeightInLumaSamples;
     // the conversion from a location (x, y) in units of minimum transform blocks
     // to a transform block address in z-scan order
     public /*UInt32*/ int[][] MinTbAddrZs;
-    final byte pps_pic_parameter_set_id; // max - 64
-    final byte pps_seq_parameter_set_id;
-    final boolean dependent_slice_segments_enabled_flag;
-    final boolean output_flag_present_flag;
-    final byte num_extra_slice_header_bits;
-    final boolean sign_data_hiding_enabled_flag;
-    final boolean cabac_init_present_flag;
-    final /*UInt32*/ long num_ref_idx_l0_default_active_minus1;
-    final /*UInt32*/ long num_ref_idx_l1_default_active_minus1;
-    final int init_qp_minus26;
-    final boolean constrained_intra_pred_flag;
-    final boolean transform_skip_enabled_flag;
-    final boolean cu_qp_delta_enabled_flag;
     /*UInt32*/ long diff_cu_qp_delta_depth;
-    final int pps_cb_qp_offset;
-    final int pps_cr_qp_offset;
-    final boolean pps_slice_chroma_qp_offsets_present_flag;
-    final boolean weighted_pred_flag;
-    final boolean weighted_bipred_flag;
-    final boolean transquant_bypass_enabled_flag;
-    final boolean tiles_enabled_flag;
-    final boolean entropy_coding_sync_enabled_flag;
     /*UInt32*/ long num_tile_columns_minus1;
     /*UInt32*/ long num_tile_rows_minus1;
     boolean uniform_spacing_flag;
     /*UInt32*/ long[] column_width_minus1;
     /*UInt32*/ long[] row_height_minus1;
     boolean loop_filter_across_tiles_enabled_flag;
-    final boolean pps_loop_filter_across_slices_enabled_flag;
-    final boolean deblocking_filter_control_present_flag;
     boolean deblocking_filter_override_enabled_flag;
     boolean pps_deblocking_filter_disabled_flag;
     int pps_beta_offset_div2;
     int pps_tc_offset_div2;
-    final boolean pps_scaling_list_data_present_flag;
-    final boolean lists_modification_present_flag;
-    final /*UInt32*/ long log2_parallel_merge_level_minus2;
-    final boolean slice_segment_header_extension_present_flag;
-    final boolean pps_extension_present_flag;
     boolean pps_range_extension_flag;
     boolean pps_multilayer_extension_flag;
     boolean pps_3d_extension_flag;
     boolean pps_scc_extension_flag;
     byte pps_extension_4bits;
     boolean pps_extension_data_flag;
-    final pps_scc_extension pps_scc_ext;
-    pps_3d_extension pps_3d_ext;
-    pps_multilayer_extension pps_multilayer_ext;
-    final pps_range_extension pps_range_ext;
 
     public pic_parameter_set_rbsp(BitStreamWithNalSupport stream, /*UInt64*/long startPosition, int size)
     {
@@ -96,7 +96,9 @@ public class pic_parameter_set_rbsp extends NalUnit
         pps_pic_parameter_set_id = (byte) stream.readUev();                 // ue(v)
         pps_seq_parameter_set_id = (byte) stream.readUev();                 // ue(v)
 
-        sps = stream.getContext().getSPS().get(pps_seq_parameter_set_id & 0xFF);
+        sps = stream.getContext()
+                    .getSPS()
+                    .get(pps_seq_parameter_set_id & 0xFF);
 
         dependent_slice_segments_enabled_flag = stream.readFlag();          // u(1)
         output_flag_present_flag = stream.readFlag();                       // u(1)
@@ -177,23 +179,21 @@ public class pic_parameter_set_rbsp extends NalUnit
             pps_extension_4bits = (byte) stream.read(4);                     // u(4)
         }
 
-        pps_range_ext = pps_range_extension_flag ?
-                new pps_range_extension(stream, transform_skip_enabled_flag) :
-                new pps_range_extension();
+        pps_range_ext = pps_range_extension_flag ? new pps_range_extension(stream, transform_skip_enabled_flag) : new pps_range_extension();
 
         if (pps_multilayer_extension_flag)
         {
-            pps_multilayer_ext = new pps_multilayer_extension(stream); /* specified in Annex F */
+            /*pps_multilayer_ext =*/
+            new pps_multilayer_extension(stream); /* specified in Annex F */
         }
 
         if (pps_3d_extension_flag)
         {
-            pps_3d_ext = new pps_3d_extension(stream); /* specified in Annex I */
+            /*pps_3d_ext =*/
+            new pps_3d_extension(stream); /* specified in Annex I */
         }
 
-        pps_scc_ext = pps_scc_extension_flag ?
-                new pps_scc_extension(stream) :
-                new pps_scc_extension();
+        pps_scc_ext = pps_scc_extension_flag ? new pps_scc_extension(stream) : new pps_scc_extension();
 
         if ((pps_extension_4bits & 0xFF) > 0)
         {
@@ -210,9 +210,7 @@ public class pic_parameter_set_rbsp extends NalUnit
     @Override
     public final String toString()
     {
-        return String.format("NAL Unit PPS \nNumber of l0 l1 refs: %d %d ",
-                (num_ref_idx_l0_default_active_minus1 & 0xFFFFFFFFL) + 1,
-                (num_ref_idx_l1_default_active_minus1 & 0xFFFFFFFFL) + 1);
+        return String.format("NAL Unit PPS \nNumber of l0 l1 refs: %d %d ", (num_ref_idx_l0_default_active_minus1 & 0xFFFFFFFFL) + 1, (num_ref_idx_l1_default_active_minus1 & 0xFFFFFFFFL) + 1);
     }
 
     public final /*UInt32*/long getLog2MinCuQpDeltaSize()
@@ -255,14 +253,12 @@ public class pic_parameter_set_rbsp extends NalUnit
         {
             for (int i = 0; i <= (num_tile_columns_minus1 & 0xFFFFFFFFL); i++)
             {
-                colWidth[i] = ((((i + 1) * (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL) -
-                        ((i * (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+                colWidth[i] = ((((i + 1) * (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL) - ((i * (sps.getPicWidthInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
             }
 
             for (int j = 0; j <= (num_tile_rows_minus1 & 0xFFFFFFFFL); j++)
             {
-                rowHeight[j] = ((((j + 1) * (sps.getPicHeightInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL) -
-                        ((j * (sps.getPicHeightInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+                rowHeight[j] = ((((j + 1) * (sps.getPicHeightInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL) - ((j * (sps.getPicHeightInCtbsY() & 0xFFFFFFFFL)) & 0xFFFFFFFFL) / (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
             }
         }
         else
@@ -334,8 +330,7 @@ public class pic_parameter_set_rbsp extends NalUnit
             for (int j = 0; j < (tileY & 0xFFFFFFFFL); j++)
                 CtbAddrRsToTs[(int) (ctbAddrRs)] = ((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) + (((sps.getPicWidthInCtbsY() & 0xFFFFFFFFL) * (rowHeight[j] & 0xFFFFFFFFL)) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
 
-            CtbAddrRsToTs[(int) (ctbAddrRs)] = ((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) +
-                    (((((((((tbY & 0xFFFFFFFFL) - (rowBd[(int) (tileY)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL) * (colWidth[(int) (tileX)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + (tbX & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - (colBd[(int) (tileX)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
+            CtbAddrRsToTs[(int) (ctbAddrRs)] = ((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) + (((((((((tbY & 0xFFFFFFFFL) - (rowBd[(int) (tileY)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL) * (colWidth[(int) (tileX)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + (tbX & 0xFFFFFFFFL)) & 0xFFFFFFFFL) - (colBd[(int) (tileX)] & 0xFFFFFFFFL)) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
 
             CtbAddrTsToRs[(int) (CtbAddrRsToTs[(int) (ctbAddrRs)])] = ctbAddrRs;
         }
@@ -356,14 +351,14 @@ public class pic_parameter_set_rbsp extends NalUnit
         }
 
 
-        ColumnWidthInLumaSamples = new /*UInt32*/long[(int) (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
-        RowHeightInLumaSamples = new /*UInt32*/long[(int) (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
-
-        for (int i = 0; i <= (num_tile_columns_minus1 & 0xFFFFFFFFL); i++)
-            ColumnWidthInLumaSamples[i] = ((colWidth[i] & 0xFFFFFFFFL) << ((sps.getCtbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL;
-
-        for (int i = 0; i <= (num_tile_rows_minus1 & 0xFFFFFFFFL); i++)
-            RowHeightInLumaSamples[i] = ((rowHeight[i] & 0xFFFFFFFFL) << ((sps.getCtbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL;
+//        ColumnWidthInLumaSamples = new /*UInt32*/long[(int) (((num_tile_columns_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+//        RowHeightInLumaSamples = new /*UInt32*/long[(int) (((num_tile_rows_minus1 & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+//
+//        for (int i = 0; i <= (num_tile_columns_minus1 & 0xFFFFFFFFL); i++)
+//            ColumnWidthInLumaSamples[i] = ((colWidth[i] & 0xFFFFFFFFL) << ((sps.getCtbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL;
+//
+//        for (int i = 0; i <= (num_tile_rows_minus1 & 0xFFFFFFFFL); i++)
+//            RowHeightInLumaSamples[i] = ((rowHeight[i] & 0xFFFFFFFFL) << ((sps.getCtbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL;
     }
 
     // 6.5.2 Z-scan order array initialization process
@@ -384,7 +379,7 @@ public class pic_parameter_set_rbsp extends NalUnit
                 tbX = ((((x & 0xFFFFFFFFL) << ((sps.getMinTbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL) >> (sps.getCtbLog2SizeY() & 0xFF)) & 0xFFFFFFFFL;
                 tbY = ((((y & 0xFFFFFFFFL) << ((sps.getMinTbLog2SizeY() & 0xFF) & 0x1F)) & 0xFFFFFFFFL) >> (sps.getCtbLog2SizeY() & 0xFF)) & 0xFFFFFFFFL;
                 ctbAddrRs = ((((sps.getPicWidthInCtbsY() & 0xFFFFFFFFL) * (tbY & 0xFFFFFFFFL)) & 0xFFFFFFFFL) + (tbX & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
-                MinTbAddrZs[(int) (x)][(int) (y)] = (int)((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) << ((((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) * 2) & 0x1F));
+                MinTbAddrZs[(int) (x)][(int) (y)] = (int) ((CtbAddrRsToTs[(int) (ctbAddrRs)] & 0xFFFFFFFFL) << ((((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)) * 2) & 0x1F));
 
                 p = 0;
                 for (byte i = 0; (i & 0xFF) < ((sps.getCtbLog2SizeY() & 0xFF) - (sps.getMinTbLog2SizeY() & 0xFF)); i++)
@@ -393,8 +388,34 @@ public class pic_parameter_set_rbsp extends NalUnit
                     p = ((p & 0xFFFFFFFFL) + ((((m & x) & 0xFFFFFFFFL) != 0 ? (((m & 0xFFFFFFFFL) * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) : 0) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
                     p = ((p & 0xFFFFFFFFL) + ((((m & y) & 0xFFFFFFFFL) != 0 ? ((((2 * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) * (m & 0xFFFFFFFFL)) & 0xFFFFFFFFL) : 0) & 0xFFFFFFFFL)) & 0xFFFFFFFFL;
                 }
-                MinTbAddrZs[(int) (x)][(int) (y)] = (int)((MinTbAddrZs[(int) (x)][(int) (y)] & 0xFFFFFFFFL) + (p & 0xFFFFFFFFL));
+                MinTbAddrZs[(int) (x)][(int) (y)] = (int) ((MinTbAddrZs[(int) (x)][(int) (y)] & 0xFFFFFFFFL) + (p & 0xFFFFFFFFL));
             }
         }
+    }
+
+    /**
+     * <p>
+     *     Calculation if tile is first (required in 8.6.1)
+     * </p>
+     */
+    public boolean check_if_tile_is_first(int tileX, int tileY)
+    {
+        for (int i = 0; i <= num_tile_columns_minus1; i++)
+        {
+            if (colBd[i] == tileX)
+            {
+                for (int k = 0; k <= num_tile_rows_minus1; k++)
+                {
+                    if (rowBd[k] == tileY)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        return false;
     }
 }

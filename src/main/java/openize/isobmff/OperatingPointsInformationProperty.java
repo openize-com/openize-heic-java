@@ -45,6 +45,6 @@ public class OperatingPointsInformationProperty extends FullBox
     @Override
     public String toString()
     {
-        return String.format("%s OMMITED", this.type);
+        return String.format("%s OMITTED", this.type);
     }
 }

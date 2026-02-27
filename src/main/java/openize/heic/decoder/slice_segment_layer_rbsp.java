@@ -15,7 +15,6 @@ import openize.heic.decoder.io.BitStreamWithNalSupport;
 
 public class slice_segment_layer_rbsp extends NalUnit
 {
-
     public final slice_segment_header slice_header;
     public slice_segment_data data;
 
@@ -69,6 +68,6 @@ public class slice_segment_layer_rbsp extends NalUnit
 
         stream.getContext().decodingPictureOrderCount(currentPicture);
 
-        data = new slice_segment_data(stream, slice_header);
+        /*data =*/ new slice_segment_data(stream, slice_header);
     }
 }
