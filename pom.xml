@@ -6,7 +6,7 @@
 
     <groupId>openize</groupId>
     <artifactId>openize-heic</artifactId>
-    <version>26.3</version>
+    <version>26.5</version>
 	<name>Openize.HEIC for Java</name>
 	<description>Openize.Heic is an open source implementation of the ISO/IEC 23008-12:2017 HEIF file format decoder. It is written from scratch and has a plain Java API to enable a simple integration into other software.</description>
 	<url>https://github.com/openize-heic/Openize.HEIC-for-Java</url>
@@ -50,6 +50,11 @@
 			<version>0.8.12</version>
 			<classifier>runtime</classifier>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+		  <groupId>com.drewnoakes</groupId>
+		  <artifactId>metadata-extractor</artifactId>
+		  <version>2.20.0</version>
 		</dependency>
 	</dependencies>
 	

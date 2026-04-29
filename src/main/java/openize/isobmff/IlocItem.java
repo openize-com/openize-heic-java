@@ -1,6 +1,6 @@
 /*
  * FileFormat.IsoBmff
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of FileFormat.IsoBmff.
  *
@@ -13,7 +13,7 @@ package openize.isobmff;
 
 /**
  * <p>
- * Data class for organised storage on location data.
+ * Data class for organized storage on location data.
  * </p>
  */
 public class IlocItem

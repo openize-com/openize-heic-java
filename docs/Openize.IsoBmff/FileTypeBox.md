@@ -35,7 +35,7 @@ Name | Value | Description | Location
 **ispe** | 0x69737065 | Width and height item property. | Located in the 'ipco' box.
 **pasp** | 0x70617370 | Pixel aspect ratio item property. | Located in the 'ipco' box.
 **colr** | 0x636f6c72 | Colour information item property. | Located in the 'ipco' box.
-**clli** | 0x636c6c69 | Content light level info. | Located in the 'clli' box.
+**clli** | 0x636f6c72 | Content light level info. | Located in the 'clli' box.
 **pixi** | 0x70697869 | Bit depth item property. | Located in the 'ipco' box.
 **rloc** | 0x726c6f63 | Position item property. | Located in the 'ipco' box.
 **auxC** | 0x61757843 | Auxiliary images association item property. | Located in the 'ipco' box.

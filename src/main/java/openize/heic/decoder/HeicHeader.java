@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -171,9 +171,9 @@ public class HeicHeader
      * <p>
      * Returns the list of EntityToGroupBox's if they exist.
      * </p>
-     * @return List of EntityToGroupBox.
+     * @return List of {@link EntityToGroupBox}. Can be `null`.
      */
-    final  List<EntityToGroupBox> getGroupsIfPresent()
+    final List<EntityToGroupBox> getGroupsIfPresent()
     {
         final GroupsListBox grplBox = this.meta.getgrpl();
         if (grplBox == null)

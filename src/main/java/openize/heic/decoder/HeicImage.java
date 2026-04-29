@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -11,6 +11,7 @@
 package openize.heic.decoder;
 
 import openize.heic.decoder.io.BitStreamWithNalSupport;
+import openize.io.IOException;
 import openize.io.IOStream;
 import openize.isobmff.*;
 
@@ -64,6 +65,11 @@ public class HeicImage
      */
     public static HeicImage load(IOStream stream)
     {
+        if (!canLoad(stream))
+        {
+            throw new IOException("Not a HEIC image.");
+        }
+
         BitStreamWithNalSupport bitstream = new BitStreamWithNalSupport(stream, 4096);
         bitstream.setBytePosition(0);
 
@@ -100,24 +106,31 @@ public class HeicImage
      */
     public static boolean canLoad(IOStream stream)
     {
-        BitStreamWithNalSupport bitstream = new BitStreamWithNalSupport(stream);
+        try
+        {
+            BitStreamWithNalSupport bitstream = new BitStreamWithNalSupport(stream);
 
-        Box box = Box.parseBox(bitstream);
+            Box box = Box.parseBox(bitstream);
 
-        if (!(box instanceof FileTypeBox))
+            if (!(box instanceof FileTypeBox))
+            {
+                return false;
+            }
+
+            FileTypeBox filetype = (FileTypeBox) box;
+            if (!filetype.isBrandSupported(1751476579)) // heic (ASCII)
+            {
+                return false;
+            }
+
+            bitstream.setBytePosition(0);
+
+            return true;
+        }
+        catch (Exception ignored)
         {
             return false;
         }
-
-        FileTypeBox filetype = (FileTypeBox) box;
-        if (!filetype.isBrandSupported(1751476579)) // heic (ASCII)
-        {
-            return false;
-        }
-
-        bitstream.setBytePosition(0);
-
-        return true;
     }
 
     /**
@@ -188,7 +201,7 @@ public class HeicImage
      * <p>Each int value refers to one pixel left to right top to bottom line by line.</p>
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
-     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     * @param dstArray        Integer array for storing the ARGB values. If {@code null} or its length is less than
      *                        necessary the new array will be allocated and returned.
      * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
@@ -219,7 +232,7 @@ public class HeicImage
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
      * @param boundsRectangle Bounds of the requested area.
-     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     * @param dstArray        Integer array for storing the ARGB values. If {@code null} or its length is less than
      *                        necessary the new array will be allocated and returned.
      * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */
@@ -230,9 +243,9 @@ public class HeicImage
 
     /**
      * <p>
-     * Heic image header. Grants convenient access to IsoBmff container meta data.
+     * HEIC image header. Grants convenient access to {@link openize.isobmff} container metadata.
      * </p>
-     * @return The Heic image header.
+     * @return The HEIC image header.
      */
     public final HeicHeader getHeader()
     {
@@ -241,17 +254,17 @@ public class HeicImage
 
     /**
      * <p>
-     * Dictionary of public Heic image frames with access by identifier.
+     * Dictionary of public HEIC image frames with access by identifier.
      * </p>
-     * @return The dictionary of public Heic image frames with access by identifier.
+     * @return The dictionary of public HEIC image frames with access by identifier.
      */
     public final Map<Long, HeicImageFrame> getFrames()
     {
-        Map<Long, HeicImageFrame> frames = _frames.entrySet().stream().filter((f) -> {
-            return !f.getValue().isHidden()
-                    && f.getValue().getDerivativeType() != BoxType.thmb
-                    &&  f.getValue().getImageType() != ImageFrameType.tmap;
-        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Long, HeicImageFrame> frames = _frames.entrySet().stream().filter((f) ->
+                !f.getValue().isHidden()
+                && f.getValue().getDerivativeType() != BoxType.thmb
+                &&  f.getValue().getImageType() != ImageFrameType.tmap)
+                              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         List<EntityToGroupBox> groups = this.getHeader().getGroupsIfPresent();
         if (groups == null)
@@ -280,9 +293,9 @@ public class HeicImage
 
     /**
      * <p>
-     * Dictionary of all Heic image frames with access by identifier.
+     * Dictionary of all HEIC image frames with access by identifier.
      * </p>
-     * @return The dictionary of all Heic image frames with access by identifier.
+     * @return The dictionary of all HEIC image frames with access by identifier.
      */
     public final Map<Long, HeicImageFrame> getAllFrames()
     {
@@ -324,6 +337,13 @@ public class HeicImage
 
     /**
      * <p>
+     * Exchangeable image metadata of the default image frame.
+     * </p>
+     */
+    public final ExifData getExif() { return getDefaultFrame().Exif; }
+
+    /**
+     * <p>
      * Fill frames dictionary with read metadata.
      * </p>
      *
@@ -341,8 +361,21 @@ public class HeicImage
 
         for (Map.Entry<Long, HeicImageFrame> frame : _frames.entrySet())
         {
-            if (rawProperties.containsKey(frame.getValue().getID()))
-                frame.getValue().loadProperties(stream, rawProperties.get(frame.getValue().getID()));
+            HeicImageFrame frameValue = frame.getValue();
+            long frameValueID = frameValue.getID();
+            if (rawProperties.containsKey(frameValueID))
+                frameValue.loadProperties(stream, rawProperties.get(frameValueID));
+
+            if (frameValue.getImageType() == ImageFrameType.Exif)
+            {
+                /*UInt32*/long[] derived = getHeader().getDerivedList(frameValueID);
+                ExifData exif = new ExifData(stream, this, frameValue);
+
+                for (/*UInt32*/long derivedId : derived)
+                {
+                    _frames.get(derivedId).Exif = exif;
+                }
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * <p>
  * Heic image frame class.
- * Contains hevc coded data or meta data.
+ * Contains hevc coded data or metadata.
  * </p>
  */
 public class HeicImageFrame
@@ -57,7 +57,7 @@ public class HeicImageFrame
 
     /**
      * <p>
-     * Raw YUV pixel data, used when a bit's depth is less or equal 8.
+     * Raw YUV pixel data, used when a bit-depth is less or equal 8.
      * Multidimensional array: chroma or luma index, then two-dimensional array with x and y navigation.
      * </p>
      */
@@ -81,7 +81,7 @@ public class HeicImageFrame
 
     /**
      * <p>
-     * Contains colour information.
+     * Contains color information.
      * This is an unused field that is created for debugging.
      * </p>
      */
@@ -281,6 +281,13 @@ public class HeicImageFrame
 
     /**
      * <p>
+     * Exchangeable image frame metadata.
+     * </p>
+     */
+    public ExifData Exif = null;
+
+    /**
+     * <p>
      * Get pixel data in the format of byte array.
      * </p>
      * <p>Each three or four bytes (the count depends on the pixel format) refer to one pixel left to right top to bottom line by line.</p>
@@ -386,7 +393,7 @@ public class HeicImageFrame
      * <p>Each int value refers to one pixel left to right top to bottom line by line.</p>
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
-     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     * @param dstArray        Integer array for storing the ARGB values. If {@code null} or its length is less than
      *                        necessary the new array will be allocated and returned.
      * @return Integer array, null if frame does not contain image data.  In general, it equals to {@code dstArray}.
      */
@@ -403,7 +410,7 @@ public class HeicImageFrame
      *
      * @param pixelFormat     Pixel format that defines the order of colors.
      * @param boundsRectangle Bounds of the requested area.
-     * @param dstArray        Integer array for storing the argb values. If {@code null} or its length is less than
+     * @param dstArray        Integer array for storing the ARGB values. If {@code null} or its length is less than
      *                        necessary the new array will be allocated and returned.
      * @return Integer array, null if frame does not contain image data. In general, it equals to {@code dstArray}.
      */

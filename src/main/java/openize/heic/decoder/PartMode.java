@@ -1,6 +1,6 @@
 /*
- * Openize.HEIC 
- * Copyright (c) 2024-2025 Openize Pty Ltd. 
+ * Openize.HEIC
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -9,7 +9,6 @@
  */
 
 package openize.heic.decoder;
-
 
 
 enum PartMode

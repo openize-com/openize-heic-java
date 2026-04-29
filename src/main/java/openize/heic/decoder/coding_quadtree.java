@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC 
- * Copyright (c) 2024-2025 Openize Pty Ltd. 
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -27,7 +27,10 @@ class coding_quadtree
         if (x0 + (1L << log2CbSize) <= (header.pps.sps.pic_width_in_luma_samples & 0xFFFFFFFFL) &&
             y0 + (1L << log2CbSize) <= (header.pps.sps.pic_height_in_luma_samples & 0xFFFFFFFFL) &&
             log2CbSize > (sps.getMinCbLog2SizeY() & 0xFF))
-            split_cu_flag = stream.getCabac().read_split_cu_flag(x0, y0, picture, cqtDepth);
+        {
+            split_cu_flag = stream.getCabac()
+                                  .read_split_cu_flag(x0, y0, picture, cqtDepth);
+        }
         else
         {
             split_cu_flag = log2CbSize > (sps.getMinCbLog2SizeY() & 0xFF);

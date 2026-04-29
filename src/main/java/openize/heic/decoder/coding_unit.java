@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -64,6 +64,10 @@ class coding_unit
             {
                 picture.setCuPredMode(x0, y0, nCbS,
                         stream.getCabac().read_pred_mode_flag() ? PredMode.MODE_INTRA : PredMode.MODE_INTER);
+            }
+            else
+            {
+                picture.setCuPredMode(x0, y0, nCbS, PredMode.MODE_INTRA);
             }
 
             if (header.pps.sps.sps_scc_ext.palette_mode_enabled_flag &&

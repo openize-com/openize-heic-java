@@ -1,4 +1,4 @@
-Openize.HEIC is available under Openize License.
+Openize.HEIC is available under Openize License.
 
 This license is derived from BSD 2 Clause License and Third-party patents clause.
 
@@ -13,16 +13,16 @@ conditions and the following disclaimer in the documentation and/or other materi
 the distribution.
 
 THIRD-PARTY PATENTS.
-FileFormat.HEIC contains HEVC/H.265 image compression/decompression technologies that are covered by
+Openize.HEIC contains HEVC/H.265 image compression/decompression technologies that are covered by
 third party patents. Openize does not and cannot grant You a patent license for the utilization
 of HEVC/H.265 image compression/decompression technologies. If You create End User Software that
-utilizes the HEVC/H.265 image compression/decompression technologies included in FileFormat.HEIC then 
+utilizes the HEVC/H.265 image compression/decompression technologies included in Openize.HEIC then 
 You are responsible for obtaining any required third-party patent licenses for the deployment and
 distribution of Your End User Software. You agree to indemnify and hold Openize harmless from any 
 and all patent claims that arise from the deployment and distribution of Your End User Software 
-that utilizes the HEVC/H.265 image compression/decompression technologies included in FileFormat.HEIC.
+that utilizes the HEVC/H.265 image compression/decompression technologies included in Openize.HEIC.
 If You plan on using the HEVC/H.265 image compression/decompression technologies included in 
-FileFormat.HEIC in Your End User Software and You would like contact details for the patent holders,
+Openize.HEIC in Your End User Software and You would like contact details for the patent holders,
 then please consider https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR 

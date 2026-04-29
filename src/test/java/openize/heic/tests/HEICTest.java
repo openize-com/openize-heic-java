@@ -10,6 +10,10 @@
 
 package openize.heic.tests;
 
+import com.drew.lang.Rational;
+import com.drew.metadata.exif.ExifIFD0Directory;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
+import openize.heic.decoder.ExifDirectoryType;
 import openize.heic.decoder.HeicImage;
 import openize.heic.decoder.HeicImageFrame;
 import openize.heic.decoder.PixelFormat;
@@ -273,5 +277,29 @@ public class HEICTest extends TestsCore
         thread1.join(); thread2.join(); thread3.join();
 
         Assert.assertEquals(errCount.get(), 0);
+	}
+
+    /**
+     * <p>
+     * Test decoding of the image exif data.
+     * </p>
+     */
+    @Test
+    public final void testExifData()
+    {
+        String filename = "iphone_portrait_photo.heic";
+        try (IOFileStream fs = new IOFileStream(Paths.get(getSamplesPath(), filename), IOMode.READ))
+        {
+            HeicImage image = HeicImage.load(fs);
+
+            Assert.assertEquals(image.getExif().getExifRawData(ExifDirectoryType.ExifIfd0Directory,
+                    ExifIFD0Directory.TAG_X_RESOLUTION), new Rational(72, 1));
+
+            Assert.assertEquals(image.getExif().getExifRawData(ExifDirectoryType.ExifSubIfdDirectory,
+                    ExifSubIFDDirectory.TAG_EXPOSURE_TIME), new Rational(1, 50));
+
+            Assert.assertEquals(image.getExif().getExifRawData(ExifDirectoryType.ExifSubIfdDirectory,
+                    ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH), 4032L);
+        }
     }
 }

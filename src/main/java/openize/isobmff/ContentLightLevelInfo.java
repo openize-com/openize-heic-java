@@ -1,6 +1,6 @@
 /*
  * Openize.IsoBmff
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.IsoBmff.
  *

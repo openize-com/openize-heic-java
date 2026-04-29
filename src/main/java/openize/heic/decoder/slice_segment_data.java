@@ -1,6 +1,6 @@
 /*
  * Openize.HEIC
- * Copyright (c) 2024-2025 Openize Pty Ltd.
+ * Copyright (c) 2024-2026 Openize Pty Ltd.
  *
  * This file is part of Openize.HEIC.
  *
@@ -90,7 +90,7 @@ public class slice_segment_data
                 while (stream.notByteAligned())
                     stream.skipBits(1);
 
-                stream.getCabac().resetStreamState();
+                stream.getCabac().initialization(header);
             }
 
         } while (!end_of_slice_segment_flag);
