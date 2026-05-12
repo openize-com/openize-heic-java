@@ -12,10 +12,11 @@ package openize.heic.decoder;
 
 import openize.heic.decoder.io.BitStreamWithNalSupport;
 
+import java.util.Arrays;
+
 
 class transform_tree
 {
-
     public transform_tree(BitStreamWithNalSupport stream, slice_segment_header header,
                           boolean IntraSplitFlag, /*UInt32*/long MaxTrafoDepth, PartMode partMode,
                           int x0, int y0, int xBase, int yBase, int log2TrafoSize, int trafoDepth, int blkIdx)
@@ -23,17 +24,33 @@ class transform_tree
         seq_parameter_set_rbsp sps = header.pps.sps;
         HeicPicture picture = header.parentPicture;
 
+        int trafoDepthMax = (int) Math.max(MaxTrafoDepth & 0xFFFFFFFFL, trafoDepth) + 1;
+
         if (picture.cbf_cb[x0][y0] == null)
         {
-            picture.cbf_cb[x0][y0] = new boolean[(int) (((MaxTrafoDepth & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+            picture.cbf_cb[x0][y0] = new boolean[trafoDepthMax];
         }
+        else if(picture.cbf_cb[x0][y0].length <= trafoDepth)
+        {
+            picture.cbf_cb[x0][y0] = Arrays.copyOf(picture.cbf_cb[x0][y0], trafoDepthMax);
+        }
+
         if (picture.cbf_cr[x0][y0] == null)
         {
-            picture.cbf_cr[x0][y0] = new boolean[(int) (((MaxTrafoDepth & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+            picture.cbf_cr[x0][y0] = new boolean[trafoDepthMax];
         }
+        else if(picture.cbf_cr[x0][y0].length <= trafoDepth)
+        {
+            picture.cbf_cr[x0][y0] = Arrays.copyOf(picture.cbf_cr[x0][y0], trafoDepthMax);
+        }
+
         if (picture.cbf_luma[x0][y0] == null)
         {
-            picture.cbf_luma[x0][y0] = new boolean[(int) (((MaxTrafoDepth & 0xFFFFFFFFL) + 1) & 0xFFFFFFFFL)];
+            picture.cbf_luma[x0][y0] = new boolean[trafoDepthMax];
+        }
+        else if(picture.cbf_luma[x0][y0].length <= trafoDepth)
+        {
+            picture.cbf_luma[x0][y0] = Arrays.copyOf(picture.cbf_luma[x0][y0], trafoDepthMax);
         }
 
         boolean split_transform_flag;

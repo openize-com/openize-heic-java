@@ -27,6 +27,10 @@ Openize.HEIC doesn't support:
 * deblocking filter.
 
 
+## New features & enhancements in version 26.5.1:
+
+- Fixed ArrayIndexOutOfBoundsException in transform_tree.java. Thanks to [@hqkhanh9600196](https://github.com/hqkhanh9600196).
+
 ## New features & enhancements in version 26.5.0:
 
 - Added support for reading EXIF metadata.
