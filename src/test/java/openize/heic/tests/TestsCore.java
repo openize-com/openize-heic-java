@@ -17,8 +17,15 @@ import openize.io.IOMode;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class TestsCore
 {
@@ -37,13 +44,21 @@ public class TestsCore
      */
     private static String getProjectPath()
     {
-        String path = HEICTest.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        int index = path.lastIndexOf("target");
-        if (index > 0)
+        try
         {
-            return path.substring(1, index);
+            // target/test-classes -> project root, on any OS
+            Path location = Paths.get(HEICTest.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            for (Path dir = location; dir != null; dir = dir.getParent())
+            {
+                if (dir.getFileName() != null && dir.getFileName().toString().equals("target"))
+                    return dir.getParent().toString();
+            }
+            return location.toString();
         }
-        return path.substring(1);
+        catch (URISyntaxException e)
+        {
+            throw new IllegalStateException(e);
+        }
     }
 
     /**
@@ -120,25 +135,9 @@ public class TestsCore
 
     /**
      * <p>
-     * Create a reference file.
-     * </p>
-     *
-     * @param filename File name.
-     * @param data     Color data.
-     */
-    protected final void createReference(String filename, /*Byte*/byte[] data)
-    {
-        String outputFilename = filename + ".bin";
-
-        try (IOFileStream stream = new IOFileStream(Paths.get(getReferencePath(), outputFilename), IOMode.READ_WRITE))
-        {
-            stream.write(data, 0, data.length);
-        }
-    }
-
-    /**
-     * <p>
-     * Compare color data with a reference file.
+     * Compare color data with a reference digest. Run the tests with {@code -Dopenize.updateReferences=true}
+     * to rewrite the digests after an intended change in the decoded output; check such a change against
+     * libheif first with {@link LibheifComparisonTest}.
      * </p>
      *
      * @param filename File name.
@@ -146,45 +145,39 @@ public class TestsCore
      */
     protected final void compareWithReference(String filename, /*Byte*/byte[] data)
     {
-        String outputFilename = filename + ".bin";
+        Path referenceFile = Paths.get(getReferencePath(), filename + ".sha256");
+        String actual = data.length + " " + sha256(data);
 
-        try (IOFileStream stream = new IOFileStream(Paths.get(getReferencePath(), outputFilename), IOMode.READ))
+        try
         {
-            final int bytesToRead = 4096;
-            int index = 0;
-
-            Assert.assertEquals(stream.getLength(), data.length, String.format("Reference length do not match. " +
-                    "Reference length equals %d, read data length equals %d", stream.getLength(), data.length));
-
-            /*Byte*/
-            byte[] one = new /*Byte*/byte[bytesToRead];
-            /*Byte*/
-            byte[] two = new /*Byte*/byte[bytesToRead];
-
-            boolean canRead = true;
-            while (canRead)
+            if (Boolean.getBoolean("openize.updateReferences"))
             {
-                int read_bytes_from_stream = stream.read(one, 0, bytesToRead);
-
-                if (index + bytesToRead <= data.length)
-                {
-                    System.arraycopy(data, index, two, 0, bytesToRead);
-                }
-                else
-                {
-                    System.arraycopy(data, index, two, 0, data.length - index);
-                }
-
-                index += bytesToRead;
-
-                if (!Arrays.equals(one, two))
-                {
-                    Assert.fail("Data does not match reference");
-                    return;
-                }
-
-                canRead = read_bytes_from_stream == bytesToRead && index < data.length;
+                Files.createDirectories(referenceFile.getParent());
+                Files.write(referenceFile, (actual + "\n").getBytes(StandardCharsets.US_ASCII));
+                return;
             }
+
+            String expected = new String(Files.readAllBytes(referenceFile), StandardCharsets.US_ASCII).trim();
+            Assert.assertEquals(actual, expected, "Decoded data does not match the reference digest of " + filename);
+        }
+        catch (IOException e)
+        {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static String sha256(byte[] data)
+    {
+        try
+        {
+            StringBuilder hex = new StringBuilder();
+            for (byte b : MessageDigest.getInstance("SHA-256").digest(data))
+                hex.append(String.format("%02x", b));
+            return hex.toString();
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException(e);
         }
     }
 

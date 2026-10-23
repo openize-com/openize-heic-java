@@ -821,7 +821,7 @@ import java.util.Arrays;
         int coeff;
 
         DecoderContext streamContext = stream.getContext();
-        int[][] scalingFactorSizeIdMatrixID = Scaling.getScalingFactor()[sizeId][matrixId];
+        int[][] scalingFactorSizeIdMatrixID = picture.scalingFactor[sizeId][matrixId];
         int bgShiftMask = 1 << (bdShift - 1);
         for (int x = 0; x < nTbS; x++)
         {

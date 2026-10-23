@@ -120,6 +120,7 @@ class transform_tree
                 picture.cbf_luma[x0][y0][trafoDepth] = stream.getCabac().read_cbf_luma(trafoDepth);
             }
 
+            picture.markTransformBlock(x0, y0, 1 << log2TrafoSize);
             new transform_unit(stream, header, partMode, x0, y0, xBase, yBase, log2TrafoSize, trafoDepth, blkIdx);
         }
     }

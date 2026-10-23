@@ -64,7 +64,6 @@ public class slice_segment_layer_rbsp extends NalUnit
 
         slice_header.slice_index = currentPicture.getSliceHeaders().size();
         currentPicture.getSliceHeaders().put(slice_header.slice_index, slice_header);
-        Scaling.initiate(currentPicture.sps);
 
         stream.getContext().decodingPictureOrderCount(currentPicture);
 

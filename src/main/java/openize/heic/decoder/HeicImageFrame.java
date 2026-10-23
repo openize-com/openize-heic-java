@@ -128,6 +128,7 @@ public class HeicImageFrame
     private Long alphaReference = null;
     private  byte imageRotationAngle;
     private  byte imageMirrorAxis;
+    private CleanApertureBox cleanAperture;
 
     /**
      * <p>
@@ -173,7 +174,7 @@ public class HeicImageFrame
      */
     public final /*UInt32*/long getWidth()
     {
-        return (imageRotationAngle & 0xFF) % 2 == 0 ? ispeWidth : ispeHeight;
+        return (imageRotationAngle & 0xFF) % 2 == 0 ? getCroppedWidth() : getCroppedHeight();
     }
 
     /**
@@ -184,7 +185,44 @@ public class HeicImageFrame
      */
     public final /*UInt32*/long getHeight()
     {
-        return (imageRotationAngle & 0xFF) % 2 == 0 ? ispeHeight : ispeWidth;
+        return (imageRotationAngle & 0xFF) % 2 == 0 ? getCroppedHeight() : getCroppedWidth();
+    }
+
+    // Size after the clean aperture crop, before rotation and mirroring
+    private long getCroppedWidth()
+    {
+        return cleanAperture == null ? ispeWidth : roundFraction(cleanAperture.cleanApertureWidthN, cleanAperture.cleanApertureWidthD);
+    }
+
+    private long getCroppedHeight()
+    {
+        return cleanAperture == null ? ispeHeight : roundFraction(cleanAperture.cleanApertureHeightN, cleanAperture.cleanApertureHeightD);
+    }
+
+    // Left edge of the clean aperture: horizOff + (width - 1) / 2 - (cleanApertureWidth - 1) / 2, rounded down
+    private long getCropLeft()
+    {
+        double left = (double) cleanAperture.horizOffN / cleanAperture.horizOffD + (ispeWidth - 1) / 2.0 -
+            ((double) cleanAperture.cleanApertureWidthN / cleanAperture.cleanApertureWidthD - 1) / 2.0;
+        return clampCropOrigin((long) Math.floor(left), ispeWidth, getCroppedWidth());
+    }
+
+    // Top edge of the clean aperture, rounded to the nearest row
+    private long getCropTop()
+    {
+        double top = (double) cleanAperture.vertOffN / cleanAperture.vertOffD + (ispeHeight - 1) / 2.0 -
+            ((double) cleanAperture.cleanApertureHeightN / cleanAperture.cleanApertureHeightD - 1) / 2.0;
+        return clampCropOrigin((long) Math.floor(top + 0.5), ispeHeight, getCroppedHeight());
+    }
+
+    private static long clampCropOrigin(long origin, long fullSize, long croppedSize)
+    {
+        return Math.max(0, Math.min(origin, fullSize - croppedSize));
+    }
+
+    private static long roundFraction(long numerator, long denominator)
+    {
+        return (2 * numerator + denominator) / (2 * denominator);
     }
 
     /**
@@ -606,9 +644,12 @@ public class HeicImageFrame
                               .addLayerReference(id, this.auxiliaryReferenceType);
                     }
                     break;
-//                case clap:
-//                    CleanApertureBox clap = (CleanApertureBox) item;
-//                    break;
+                case clap:
+                    CleanApertureBox clap = (CleanApertureBox) item;
+                    if (clap.cleanApertureWidthD != 0 && clap.cleanApertureHeightD != 0 &&
+                        clap.horizOffD != 0 && clap.vertOffD != 0)
+                        this.cleanAperture = clap;
+                    break;
                 case irot:
                     ImageRotation irot = (ImageRotation) item;
                     this.imageRotationAngle = irot.angle;
@@ -670,6 +711,7 @@ public class HeicImageFrame
             throw new IllegalStateException("Unknown image type.");
         }
 
+        rgba = cropImage(rgba);
         rgba = transformImage(rgba);
         addAlphaLayer(rgba, boundsRectangle);
 
@@ -713,6 +755,23 @@ public class HeicImageFrame
         }
     }
 
+    // Clean aperture (clap) crop, applied before rotation and mirroring
+    private byte[][][] cropImage(byte[][][] pixels)
+    {
+        if (cleanAperture == null)
+            return pixels;
+
+        int left = (int) getCropLeft();
+        int top = (int) getCropTop();
+        int width = (int) getCroppedWidth();
+        int height = (int) getCroppedHeight();
+        byte[][][] cropped = new byte[width][height][];
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                cropped[x][y] = pixels[left + x][top + y];
+        return cropped;
+    }
+
     private byte[][][] transformImage(byte[][][] pixels)
     {
         final int rotationAngle = imageRotationAngle & 0xFF;
@@ -740,7 +799,7 @@ public class HeicImageFrame
                         break;
                     case 2:
                         oldCol = width - newCol - 1;
-                        oldRow = width - newRow - 1;
+                        oldRow = height - newRow - 1;
                         break;
                     case 1:
                         oldCol = height - newRow - 1;
@@ -833,6 +892,7 @@ public class HeicImageFrame
 
         if (stream.getContext().getPictures().containsKey(id))
         {
+            stream.getContext().getPictures().get(id).applyLoopFilters();
             rawPixels = stream.getContext().getPictures().get(id).pixels;
             rawPixelsHighColorRange = stream.getContext().getPictures().get(id).pixels_high_color_range;
         }

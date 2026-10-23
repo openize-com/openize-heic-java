@@ -72,6 +72,12 @@ public class HeicPicture
     public int[] pcm_sample_luma;
     public int[] pcm_sample_chroma;
 
+    // per 4x4 luma block: LoopFilter.VERTICAL_EDGE, HORIZONTAL_EDGE and NO_FILTER bits
+    public byte[][] blockFlags;
+
+    // ScalingFactor[sizeId][matrixId][x][y] (7.4.5) from the PPS scaling list, the SPS one, or the defaults
+    final int[][][][] scalingFactor;
+
     public /*Byte*/byte[][][] pixels;
     public /*UInt16*/int[][][] pixels_high_color_range;
 
@@ -84,6 +90,10 @@ public class HeicPicture
         sps = pps.sps;
         vps = sps.vps;
         nal_header.cloneTo(NalHeader);
+
+        scaling_list_data scalingList = pps.pps_scaling_list_data_present_flag ? pps.pps_scaling_list_data :
+            sps.sps_scaling_list_data_present_flag ? sps.scaling_list_data : scaling_list_data.DEFAULT;
+        scalingFactor = scalingList.getScalingFactor(sps.getChromaArrayType());
 
         /*UInt32*/long widthMax;
         /*UInt32*/long heightMax;
@@ -125,6 +135,7 @@ public class HeicPicture
                 pixels[i] = new /*Byte*/byte[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
         }
 
+        blockFlags = new byte[(int)(widthMax >> 2)][(int)(heightMax >> 2)];
         CtDepth = new int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
         CuPredMode = PredMode.createArray2D((int)(widthMax & 0xFFFFFFFFL), (int)(heightMax & 0xFFFFFFFFL));
         QpY = new int[(int)(widthMax & 0xFFFFFFFFL)][(int)(heightMax & 0xFFFFFFFFL)];
@@ -166,6 +177,7 @@ public class HeicPicture
         sao_band_position = null;
         SliceAddrRs = null;
         SliceHeaderIndex = null;
+        blockFlags = null;
         IntraPredModeY = null;
         IntraPredModeC = null;
         TransCoeffLevel = null;
@@ -311,6 +323,31 @@ public class HeicPicture
             for (int j = y0; j < y0 + nCbS; j++)
                 QpY[i][j] = qpY;
     }
+    // Marks the left and top edges of a transform (or coding) block for the deblocking filter
+    final void markTransformBlock(int x0, int y0, int size)
+    {
+        int blocks = Math.max(size >> 2, 1);
+        for (int i = 0; i < blocks; i++)
+        {
+            blockFlags[x0 >> 2][(y0 >> 2) + i] |= LoopFilter.VERTICAL_EDGE;
+            blockFlags[(x0 >> 2) + i][y0 >> 2] |= LoopFilter.HORIZONTAL_EDGE;
+        }
+    }
+
+    // Samples of a coding unit coded with cu_transquant_bypass_flag are left untouched by the in-loop filters
+    final void markNoFilter(int x0, int y0, int nCbS)
+    {
+        for (int i = x0 >> 2; i < (x0 + nCbS) >> 2; i++)
+            for (int j = y0 >> 2; j < (y0 + nCbS) >> 2; j++)
+                blockFlags[i][j] |= LoopFilter.NO_FILTER;
+    }
+
+    // Applies the deblocking filter and sample adaptive offset once every slice of the picture is reconstructed
+    public final void applyLoopFilters()
+    {
+        LoopFilter.apply(this);
+    }
+
     final void setLog2CbSize(int x0, int y0, int log2CbSize)
     {
         int nCbS = 1 << log2CbSize;

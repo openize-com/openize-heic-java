@@ -50,6 +50,10 @@ class coding_unit
 
         int nCbS = (1 << log2CbSize);
 
+        picture.markTransformBlock(x0, y0, nCbS);
+        if (stream.getContext().cu_transquant_bypass_flag)
+            picture.markNoFilter(x0, y0, nCbS);
+
         if (picture.cu_skip_flag[x0][y0])
         {
             picture.setCuPredMode(x0, y0, nCbS, PredMode.MODE_SKIP);

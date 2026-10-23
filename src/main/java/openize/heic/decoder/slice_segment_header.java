@@ -284,6 +284,11 @@ public class slice_segment_header
                 cu_chroma_qp_offset_enabled_flag = stream.readFlag();
             }
 
+            slice_deblocking_filter_disabled_flag = pps.pps_deblocking_filter_disabled_flag;
+            slice_beta_offset_div2 = pps.pps_beta_offset_div2;
+            slice_tc_offset_div2 = pps.pps_tc_offset_div2;
+            slice_loop_filter_across_slices_enabled_flag = pps.pps_loop_filter_across_slices_enabled_flag;
+
             if (pps.deblocking_filter_override_enabled_flag)
             {
                 deblocking_filter_override_flag = stream.readFlag();

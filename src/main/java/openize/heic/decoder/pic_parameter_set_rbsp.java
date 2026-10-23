@@ -40,6 +40,7 @@ public class pic_parameter_set_rbsp extends NalUnit
     final boolean pps_loop_filter_across_slices_enabled_flag;
     final boolean deblocking_filter_control_present_flag;
     final boolean pps_scaling_list_data_present_flag;
+    scaling_list_data pps_scaling_list_data;
     final boolean lists_modification_present_flag;
     final /*UInt32*/ long log2_parallel_merge_level_minus2;
     final boolean slice_segment_header_extension_present_flag;
@@ -162,7 +163,7 @@ public class pic_parameter_set_rbsp extends NalUnit
         pps_scaling_list_data_present_flag = stream.readFlag();             // u(1)
         if (pps_scaling_list_data_present_flag)
         {
-            new scaling_list_data(stream);
+            pps_scaling_list_data = new scaling_list_data(stream);
         }
 
         lists_modification_present_flag = stream.readFlag();                // u(1)
